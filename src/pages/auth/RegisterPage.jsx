@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleAuthButton from "../../components/auth/GoogleAuthButton";
 
 import AuthLayout from "../../components/auth/AuthLayout";
 import { registerUser } from "../../services/auth.service";
@@ -125,12 +126,7 @@ function RegisterPage() {
       <div className="divider">
         <span>Or continue with</span>
       </div>
-
-      <button className="social-button" type="button">
-        <span className="google-icon">G</span>
-        Google
-      </button>
-
+      <GoogleAuthButton onError={setError} />
       <p className="auth-switch">
         Already have an account? <Link to="/login">Sign In</Link>
       </p>

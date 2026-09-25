@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleAuthButton from "../../components/auth/GoogleAuthButton";
 
 import AuthLayout from "../../components/auth/AuthLayout";
 import { loginUser } from "../../services/auth.service";
@@ -98,11 +99,7 @@ function LoginPage() {
       <div className="divider">
         <span>Or continue with</span>
       </div>
-
-      <button className="social-button" type="button">
-        <span className="google-icon">G</span>
-        Google
-      </button>
+      <GoogleAuthButton onError={setError} />
 
       <p className="auth-switch">
         Don't have an account? <Link to="/register">Sign Up</Link>

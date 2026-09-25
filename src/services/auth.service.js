@@ -150,3 +150,23 @@ export async function resetPassword(email, code, newPassword) {
 
   return data;
 }
+export async function googleLogin(credential) {
+  const response = await fetch(`${API_URL}/google`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      credential,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+
+  return data;
+}

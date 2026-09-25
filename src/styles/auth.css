@@ -579,3 +579,29 @@
   color: #baff66;
   font-size: 13px;
 }
+.google-login-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.google-auth-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.google-auth-container > div {
+  max-width: 100%;
+}
+
+@media (max-width: 520px) {
+  .google-auth-container {
+    width: 100%;
+  }
+
+  .google-auth-container iframe {
+    max-width: 100% !important;
+  }
+}
