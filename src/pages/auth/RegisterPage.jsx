@@ -1,9 +1,56 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import AuthLayout from "../../components/auth/AuthLayout";
+import { registerUser } from "../../services/auth.service";
 
 function RegisterPage() {
-  function handleSubmit(event) {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await registerUser({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -17,8 +64,11 @@ function RegisterPage() {
 
           <input
             id="name"
+            name="name"
             type="text"
-            placeholder="Syed Anas Bukhari"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Enter your full name"
             required
           />
         </div>
@@ -28,7 +78,10 @@ function RegisterPage() {
 
           <input
             id="email"
+            name="email"
             type="email"
+            value={formData.email}
+            onChange={handleChange}
             placeholder="example@gmail.com"
             required
           />
@@ -39,7 +92,10 @@ function RegisterPage() {
 
           <input
             id="password"
+            name="password"
             type="password"
+            value={formData.password}
+            onChange={handleChange}
             placeholder="Create your password"
             required
           />
@@ -50,14 +106,19 @@ function RegisterPage() {
 
           <input
             id="confirmPassword"
+            name="confirmPassword"
             type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
             placeholder="Confirm your password"
             required
           />
         </div>
 
-        <button className="primary-button" type="submit">
-        Register
+        {error && <p className="form-error">{error}</p>}
+
+        <button className="primary-button" type="submit" disabled={loading}>
+          {loading ? "Creating account..." : "Register"}
         </button>
       </form>
 

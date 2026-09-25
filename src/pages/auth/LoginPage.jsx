@@ -1,9 +1,48 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import AuthLayout from "../../components/auth/AuthLayout";
+import { loginUser } from "../../services/auth.service";
 
 function LoginPage() {
-  function handleSubmit(event) {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    setError("");
+
+    try {
+      setLoading(true);
+
+      await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -17,7 +56,10 @@ function LoginPage() {
 
           <input
             id="email"
+            name="email"
             type="email"
+            value={formData.email}
+            onChange={handleChange}
             placeholder="example@gmail.com"
             required
           />
@@ -28,7 +70,10 @@ function LoginPage() {
 
           <input
             id="password"
+            name="password"
             type="password"
+            value={formData.password}
+            onChange={handleChange}
             placeholder="Enter your password"
             required
           />
@@ -43,8 +88,10 @@ function LoginPage() {
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
 
-        <button className="primary-button" type="submit">
-           Sign In
+        {error && <p className="form-error">{error}</p>}
+
+        <button className="primary-button" type="submit" disabled={loading}>
+          {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
