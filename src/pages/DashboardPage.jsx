@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { Bookmark, CalendarDays, CloudSun, Crown } from "lucide-react";
 
-import MobileNav from "../components/dashboard/MobileNav";
-import ProFeaturesCard from "../components/dashboard/ProFeaturesCard";
-
-import QuickPlanner from "../components/dashboard/QuickPlanner";
-import SavedDestinations from "../components/dashboard/SavedDestinations";
-
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import Sidebar from "../components/dashboard/Sidebar";
 import StatCard from "../components/dashboard/StatCard";
+import SavedDestinations from "../components/dashboard/SavedDestinations";
+import QuickPlanner from "../components/dashboard/QuickPlanner";
+import ProFeaturesCard from "../components/dashboard/ProFeaturesCard";
+import MobileNav from "../components/dashboard/MobileNav";
+import WeatherOverview from "../components/dashboard/WeatherOverview";
 
 import { getCurrentUser } from "../services/auth.service";
+import { getWeather } from "../services/weather.service";
 
 import "../styles/dashboard.css";
 
@@ -19,11 +19,15 @@ function DashboardPage() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
+  const [weather, setWeather] = useState(null);
+  const [loadingWeather, setLoadingWeather] = useState(true);
+  const [weatherError, setWeatherError] = useState("");
+  const [weatherCity, setWeatherCity] = useState("Lahore");
+
   useEffect(() => {
     async function loadUser() {
       try {
         const data = await getCurrentUser();
-
         setUser(data.user);
       } catch (error) {
         console.error("Unable to load dashboard user:", error);
@@ -33,6 +37,28 @@ function DashboardPage() {
     }
 
     loadUser();
+  }, []);
+
+  async function loadWeather(city) {
+    try {
+      setLoadingWeather(true);
+      setWeatherError("");
+
+      const weatherData = await getWeather(city);
+
+      setWeather(weatherData);
+      setWeatherCity(weatherData.location.name);
+    } catch (error) {
+      console.error("Unable to load weather:", error);
+
+      setWeatherError(error.message || "Weather information is unavailable.");
+    } finally {
+      setLoadingWeather(false);
+    }
+  }
+
+  useEffect(() => {
+    loadWeather("Lahore");
   }, []);
 
   if (loadingUser) {
@@ -82,8 +108,16 @@ function DashboardPage() {
             <StatCard
               icon={<CloudSun size={20} />}
               title="Current Weather"
-              value="26°C"
-              subtitle="Lahore, Pakistan"
+              value={
+                weather ? `${Math.round(weather.current.temperature)}°C` : "--"
+              }
+              subtitle={
+                weather
+                  ? `${weather.location.name}, ${weather.location.country}`
+                  : loadingWeather
+                    ? "Loading weather..."
+                    : "Weather unavailable"
+              }
             />
 
             <StatCard
@@ -126,67 +160,26 @@ function DashboardPage() {
               </div>
             </div>
 
-            <div className="dashboard-panel weather-panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="panel-label">WEATHER</span>
-
-                  <h2>Weather overview</h2>
-                </div>
-
-                <button type="button">Details</button>
-              </div>
-
-              <div className="weather-current">
-                <div>
-                  <span>Lahore</span>
-
-                  <strong>26°</strong>
-
-                  <p>Clear skies</p>
-                </div>
-
-                <CloudSun size={50} />
-              </div>
-
-              <div className="weather-days">
-                <div>
-                  <span>Mon</span>
-                  <strong>26°</strong>
-                </div>
-
-                <div>
-                  <span>Tue</span>
-                  <strong>28°</strong>
-                </div>
-
-                <div>
-                  <span>Wed</span>
-                  <strong>25°</strong>
-                </div>
-
-                <div>
-                  <span>Thu</span>
-                  <strong>27°</strong>
-                </div>
-
-                <div>
-                  <span>Fri</span>
-                  <strong>29°</strong>
-                </div>
-              </div>
-            </div>
+            <WeatherOverview
+              weather={weather}
+              loading={loadingWeather}
+              error={weatherError}
+              currentCity={weatherCity}
+              onSearch={loadWeather}
+            />
           </section>
+
           <section className="dashboard-secondary-grid">
             <SavedDestinations />
-
             <QuickPlanner />
           </section>
+
           <section className="dashboard-pro-section">
             <ProFeaturesCard />
           </section>
         </main>
       </div>
+
       <MobileNav />
     </div>
   );
