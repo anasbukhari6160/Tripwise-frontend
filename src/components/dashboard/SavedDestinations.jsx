@@ -1,23 +1,11 @@
 import { MapPin, MoreHorizontal } from "lucide-react";
 
-function SavedDestinations() {
-  const destinations = [
-    {
-      city: "Dubai",
-      country: "United Arab Emirates",
-      note: "Saved for winter trip",
-    },
-    {
-      city: "Istanbul",
-      country: "Türkiye",
-      note: "Saved for next vacation",
-    },
-    {
-      city: "Baku",
-      country: "Azerbaijan",
-      note: "Saved destination",
-    },
-  ];
+import { useNavigate } from "react-router-dom";
+
+function SavedDestinations({ destinations = [], loading = false }) {
+  const navigate = useNavigate();
+
+  const visibleDestinations = destinations.slice(0, 3);
 
   return (
     <div className="dashboard-panel saved-destinations-panel">
@@ -28,34 +16,43 @@ function SavedDestinations() {
           <h2>Places on your list</h2>
         </div>
 
-        <button type="button">View All</button>
+        <button type="button" onClick={() => navigate("/saved")}>
+          View All
+        </button>
       </div>
 
-      <div className="saved-destination-list">
-        {destinations.map((destination) => (
-          <div className="saved-destination-item" key={destination.city}>
-            <div className="destination-icon">
-              <MapPin size={18} />
+      {loading ? (
+        <div className="saved-dashboard-state">Loading destinations...</div>
+      ) : visibleDestinations.length === 0 ? (
+        <div className="saved-dashboard-state">No saved destinations yet.</div>
+      ) : (
+        <div className="saved-destination-list">
+          {visibleDestinations.map((destination) => (
+            <div className="saved-destination-item" key={destination.id}>
+              <div className="destination-icon">
+                <MapPin size={18} />
+              </div>
+
+              <div className="destination-info">
+                <strong>{destination.city}</strong>
+
+                <span>{destination.country}</span>
+
+                <small>Saved destination</small>
+              </div>
+
+              <button
+                type="button"
+                className="destination-menu-button"
+                onClick={() => navigate("/saved")}
+                aria-label={`Open ${destination.city}`}
+              >
+                <MoreHorizontal size={18} />
+              </button>
             </div>
-
-            <div className="destination-info">
-              <strong>{destination.city}</strong>
-
-              <span>{destination.country}</span>
-
-              <small>{destination.note}</small>
-            </div>
-
-            <button
-              type="button"
-              className="destination-menu-button"
-              aria-label={`Options for ${destination.city}`}
-            >
-              <MoreHorizontal size={18} />
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

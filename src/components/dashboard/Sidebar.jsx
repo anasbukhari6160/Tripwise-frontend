@@ -43,10 +43,15 @@ function Sidebar() {
           <span>My Trips</span>
         </a>
 
-        <a className="sidebar-link" href="#">
+        <NavLink
+          to="/saved"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? "active" : ""}`
+          }
+        >
           <MapPinned size={19} />
           <span>Saved</span>
-        </a>
+        </NavLink>
 
         <a className="sidebar-link" href="#">
           <Compass size={19} />
