@@ -1,0 +1,105 @@
+.weather-page {
+  min-height: 100vh;
+
+  padding: 42px 24px 110px;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(202, 255, 51, 0.07),
+      transparent 32%
+    ),
+    #050805;
+
+  color: #f4f7f1;
+}
+
+.weather-page-container {
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.weather-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 34px;
+  padding: 10px 13px;
+
+  border: 1px solid #273122;
+  border-radius: 11px;
+
+  background: #080c07;
+  color: #aab2a6;
+
+  cursor: pointer;
+}
+
+.weather-back-button:hover {
+  border-color: #405039;
+  color: #caff33;
+}
+
+.weather-page-heading {
+  margin-bottom: 28px;
+}
+
+.weather-page-heading > span {
+  color: #caff33;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.weather-page-heading h1 {
+  margin: 8px 0 7px;
+
+  font-size: clamp(30px, 5vw, 44px);
+  letter-spacing: -1.4px;
+}
+
+.weather-page-heading p {
+  max-width: 600px;
+
+  margin: 0;
+
+  color: #818b7d;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.weather-page-content {
+  width: 100%;
+}
+
+.weather-page-content .weather-panel {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+  .weather-page {
+    padding: 28px 18px 110px;
+  }
+}
+
+@media (max-width: 560px) {
+  .weather-page {
+    padding: 22px 14px 105px;
+  }
+
+  .weather-back-button {
+    margin-bottom: 25px;
+  }
+
+  .weather-page-heading h1 {
+    font-size: 29px;
+  }
+
+  .weather-page-heading p {
+    font-size: 12px;
+  }
+}

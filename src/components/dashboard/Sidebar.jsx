@@ -1,3 +1,4 @@
+import { NavLink } from "react-router-dom";
 import {
   CloudSun,
   Compass,
@@ -17,15 +18,25 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        <a className="sidebar-link active" href="#">
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? "active" : ""}`
+          }
+        >
           <LayoutDashboard size={19} />
           <span>Overview</span>
-        </a>
+        </NavLink>
 
-        <a className="sidebar-link" href="#">
+        <NavLink
+          to="/weather"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? "active" : ""}`
+          }
+        >
           <CloudSun size={19} />
           <span>Weather</span>
-        </a>
+        </NavLink>
 
         <a className="sidebar-link" href="#">
           <Route size={19} />
@@ -42,10 +53,15 @@ function Sidebar() {
           <span>Trip Planner</span>
         </a>
 
-        <a className="sidebar-link" href="#">
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? "active" : ""}`
+          }
+        >
           <User size={19} />
           <span>Profile</span>
-        </a>
+        </NavLink>
       </nav>
 
       <div className="sidebar-bottom">
