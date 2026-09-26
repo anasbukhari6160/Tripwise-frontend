@@ -36,10 +36,15 @@ function MobileNav() {
         <span>Trips</span>
       </button>
 
-      <button className="mobile-nav-item" type="button">
+      <NavLink
+        to="/saved"
+        className={({ isActive }) =>
+          `mobile-nav-item ${isActive ? "active" : ""}`
+        }
+      >
         <MapPinned size={19} />
         <span>Saved</span>
-      </button>
+      </NavLink>
 
       <NavLink
         to="/profile"

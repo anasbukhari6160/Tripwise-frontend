@@ -9,6 +9,7 @@ import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import WeatherPage from "./pages/WeatherPage";
+import SavedPage from "./pages/SavedPage";
 function App() {
   return (
     <Routes>
@@ -39,6 +40,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/saved"
+        element={
+          <ProtectedRoute>
+            <SavedPage />
           </ProtectedRoute>
         }
       />
