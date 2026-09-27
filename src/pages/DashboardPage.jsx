@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-
+import "../styles/dashboard.css";
 import {
   Bookmark,
   CalendarDays,
@@ -265,7 +265,7 @@ function DashboardPage() {
 
   return (
     <div className="dashboard-layout">
-      <Sidebar />
+      <Sidebar user={user} />
 
       <div className="dashboard-main">
         <DashboardHeader user={user} />
@@ -511,7 +511,7 @@ function DashboardPage() {
           </section>
 
           <section className="dashboard-pro-section">
-            <ProFeaturesCard />
+            <ProFeaturesCard user={user} />
           </section>
         </main>
       </div>

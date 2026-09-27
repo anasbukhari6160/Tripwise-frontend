@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
+
 import {
   CloudSun,
   Compass,
@@ -10,7 +12,35 @@ import {
   User,
 } from "lucide-react";
 
-function Sidebar() {
+import { createCheckoutSession } from "../../services/payment.service";
+
+function Sidebar({ user }) {
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState("");
+
+  const isPro = user?.plan === "pro";
+
+  async function handleUpgrade() {
+    try {
+      setUpgrading(true);
+      setUpgradeError("");
+
+      const data = await createCheckoutSession();
+
+      if (!data.checkoutUrl) {
+        throw new Error("Stripe checkout URL was not returned.");
+      }
+
+      window.location.href = data.checkoutUrl;
+    } catch (error) {
+      console.error("Sidebar Stripe checkout error:", error);
+
+      setUpgradeError(error.message || "Unable to start Stripe checkout.");
+    } finally {
+      setUpgrading(false);
+    }
+  }
+
   return (
     <aside className="dashboard-sidebar">
       <div className="sidebar-brand">
@@ -76,11 +106,28 @@ function Sidebar() {
           </div>
 
           <div>
-            <strong>Upgrade to Pro</strong>
-            <p>Unlock smarter travel tools.</p>
+            <strong>{isPro ? "TripWise Pro" : "Upgrade to Pro"}</strong>
+
+            <p>
+              {isPro
+                ? "Premium features unlocked."
+                : "Unlock smarter travel tools."}
+            </p>
           </div>
 
-          <button type="button">Upgrade</button>
+          {isPro ? (
+            <button type="button" disabled>
+              Pro Active
+            </button>
+          ) : (
+            <button type="button" onClick={handleUpgrade} disabled={upgrading}>
+              {upgrading ? "Opening..." : "Upgrade"}
+            </button>
+          )}
+
+          {upgradeError && (
+            <small className="sidebar-pro-error">{upgradeError}</small>
+          )}
         </div>
 
         <a className="sidebar-link" href="#">
