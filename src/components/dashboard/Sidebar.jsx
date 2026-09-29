@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   MapPin,
+  MessageCircle,
   Route as RouteIcon,
   UserRound,
 } from "lucide-react";
@@ -100,6 +101,17 @@ function Sidebar({ user }) {
           <NavLink to="/trip-planner" className={getLinkClass}>
             <MapPin size={19} />
             <span>Trip Planner</span>
+          </NavLink>
+          
+          <NavLink
+            to="/contact"
+            className={({ isActive }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
+          >
+            <MessageCircle size={18} />
+
+            <span>Contact Us</span>
           </NavLink>
         </nav>
       </div>

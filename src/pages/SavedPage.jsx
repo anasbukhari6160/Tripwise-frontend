@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
   ArrowLeft,
   Bookmark,
@@ -22,22 +24,58 @@ import {
 import "../styles/saved.css";
 import "../styles/dashboard.css";
 
+/* =========================================================
+   LOCATION HELPERS
+========================================================= */
+
+function getLocationName(location) {
+  return location?.name || location?.city || location?.locationName || "";
+}
+
 function getLocationLabel(location) {
-  return [location.name, location.region, location.country]
+  return [getLocationName(location), location?.region, location?.country]
     .filter(Boolean)
     .join(", ");
 }
 
+function createLocationPreview(location) {
+  const latitude = Number(location?.latitude);
+  const longitude = Number(location?.longitude);
+
+  return {
+    city: getLocationName(location),
+    country: location?.country || "",
+    latitude,
+    longitude,
+  };
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
 function SavedPage() {
   const navigate = useNavigate();
+
+  /*
+   * Used to invalidate older autocomplete requests.
+   *
+   * This prevents an old request from reopening
+   * the suggestions after the user has already
+   * pressed Search or selected a destination.
+   */
+  const suggestionRequestRef = useRef(0);
 
   const [destinations, setDestinations] = useState([]);
 
   const [plan, setPlan] = useState("free");
+
   const [limit, setLimit] = useState(1);
+
   const [canSaveMore, setCanSaveMore] = useState(true);
 
   const [city, setCity] = useState("");
+
   const [suggestions, setSuggestions] = useState([]);
 
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -47,13 +85,20 @@ function SavedPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [loading, setLoading] = useState(true);
+
   const [searching, setSearching] = useState(false);
+
   const [saving, setSaving] = useState(false);
 
   const [deletingId, setDeletingId] = useState(null);
 
   const [error, setError] = useState("");
+
   const [message, setMessage] = useState("");
+
+  /* =========================================================
+     LOAD SAVED DESTINATIONS
+  ========================================================= */
 
   async function loadDestinations() {
     try {
@@ -65,7 +110,9 @@ function SavedPage() {
       setDestinations(data.destinations || []);
 
       setPlan(data.plan || "free");
+
       setLimit(data.limit);
+
       setCanSaveMore(data.canSaveMore);
     } catch (requestError) {
       setError(requestError.message);
@@ -78,18 +125,51 @@ function SavedPage() {
     loadDestinations();
   }, []);
 
+  /* =========================================================
+     AUTOCOMPLETE
+  ========================================================= */
+
   useEffect(() => {
     const query = city.trim();
 
+    /*
+     * Not enough characters.
+     */
     if (query.length < 2) {
+      suggestionRequestRef.current += 1;
+
       setSuggestions([]);
       setShowSuggestions(false);
+      setSearching(false);
+
       return;
     }
 
+    /*
+     * A location has already been selected.
+     *
+     * Do not perform another autocomplete
+     * request for its completed label.
+     */
     if (selectedLocation && city === getLocationLabel(selectedLocation)) {
+      suggestionRequestRef.current += 1;
+
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSearching(false);
+
       return;
     }
+
+    /*
+     * Every search request gets an ID.
+     *
+     * Only the latest request is allowed
+     * to update the recommendation list.
+     */
+    const requestId = suggestionRequestRef.current + 1;
+
+    suggestionRequestRef.current = requestId;
 
     const timer = setTimeout(async () => {
       try {
@@ -97,79 +177,233 @@ function SavedPage() {
 
         const results = await searchLocations(query);
 
-        setSuggestions(results || []);
-        setShowSuggestions(true);
+        /*
+         * Ignore stale requests.
+         */
+        if (suggestionRequestRef.current !== requestId) {
+          return;
+        }
+
+        const safeResults = results || [];
+
+        setSuggestions(safeResults);
+
+        setShowSuggestions(safeResults.length > 0);
       } catch (searchError) {
+        if (suggestionRequestRef.current !== requestId) {
+          return;
+        }
+
         console.error("Location suggestion error:", searchError);
 
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
-        setSearching(false);
+        if (suggestionRequestRef.current === requestId) {
+          setSearching(false);
+        }
       }
     }, 350);
 
     return () => clearTimeout(timer);
   }, [city, selectedLocation]);
 
-  async function handleSearch(event) {
-    event.preventDefault();
+  /* =========================================================
+     SELECT LOCATION
+  ========================================================= */
 
-    const cleanCity = city.trim();
+  function selectLocation(location) {
+    const preview = createLocationPreview(location);
 
-    if (cleanCity.length < 2) {
-      setError("Enter at least 2 characters.");
+    if (
+      !preview.city ||
+      !preview.country ||
+      !Number.isFinite(preview.latitude) ||
+      !Number.isFinite(preview.longitude)
+    ) {
+      setSelectedLocation(null);
+      setLocationPreview(null);
+
+      setSuggestions([]);
+      setShowSuggestions(false);
+
+      setError(
+        "The selected destination does not contain valid location data.",
+      );
+
       return;
     }
 
-    try {
-      setSearching(true);
-      setError("");
-      setMessage("");
+    /*
+     * Invalidate autocomplete requests that
+     * may still be running.
+     */
+    suggestionRequestRef.current += 1;
 
-      const results = await searchLocations(cleanCity);
-
-      setSuggestions(results || []);
-      setShowSuggestions(true);
-
-      if (!results || results.length === 0) {
-        setError("No matching location found.");
-      }
-    } catch (searchError) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setError(searchError.message);
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  function handleSelectLocation(location) {
     setSelectedLocation(location);
 
-    setLocationPreview({
-      city: location.name,
-      country: location.country,
-      latitude: location.latitude,
-      longitude: location.longitude,
-    });
+    setLocationPreview(preview);
 
     setCity(getLocationLabel(location));
 
     setSuggestions([]);
     setShowSuggestions(false);
+
+    setSearching(false);
+
     setError("");
     setMessage("");
   }
 
+  function handleSelectLocation(location) {
+    selectLocation(location);
+  }
+
+  /* =========================================================
+     EXPLICIT SEARCH BUTTON
+  ========================================================= */
+
+  async function handleSearch(event) {
+    event.preventDefault();
+
+    const cleanQuery = city.trim();
+
+    setError("");
+    setMessage("");
+
+    if (cleanQuery.length < 2) {
+      suggestionRequestRef.current += 1;
+
+      setSelectedLocation(null);
+      setLocationPreview(null);
+
+      setSuggestions([]);
+      setShowSuggestions(false);
+
+      setSearching(false);
+
+      setError("Enter at least 2 characters.");
+
+      return;
+    }
+
+    /*
+     * Important bug fix:
+     *
+     * invalidate the predictive autocomplete request
+     * before running the explicit Search request.
+     *
+     * This stops an older autocomplete response from
+     * reopening the recommendations afterwards.
+     */
+    const requestId = suggestionRequestRef.current + 1;
+
+    suggestionRequestRef.current = requestId;
+
+    setSuggestions([]);
+    setShowSuggestions(false);
+
+    try {
+      setSearching(true);
+
+      const results = await searchLocations(cleanQuery);
+
+      /*
+       * The user may have changed the input
+       * while Search was still running.
+       */
+      if (suggestionRequestRef.current !== requestId) {
+        return;
+      }
+
+      if (!results || results.length === 0) {
+        setSelectedLocation(null);
+        setLocationPreview(null);
+
+        setSuggestions([]);
+        setShowSuggestions(false);
+
+        setError("No matching destination found.");
+
+        return;
+      }
+
+      /*
+       * Search button chooses the highest-ranked
+       * matching destination.
+       */
+      const bestMatch = results[0];
+
+      selectLocation(bestMatch);
+    } catch (searchError) {
+      if (suggestionRequestRef.current !== requestId) {
+        return;
+      }
+
+      console.error("Saved destination search error:", searchError);
+
+      setSelectedLocation(null);
+      setLocationPreview(null);
+
+      setSuggestions([]);
+      setShowSuggestions(false);
+
+      setError(searchError.message || "Unable to search destinations.");
+    } finally {
+      /*
+       * selectLocation() invalidates the current
+       * request itself, so only clear searching
+       * here when this request is still current.
+       */
+      if (suggestionRequestRef.current === requestId) {
+        setSearching(false);
+      }
+    }
+  }
+
+  /* =========================================================
+     INPUT CHANGE
+  ========================================================= */
+
+  function handleCityChange(event) {
+    /*
+     * Immediately invalidate any old autocomplete
+     * or explicit search request.
+     */
+    suggestionRequestRef.current += 1;
+
+    setCity(event.target.value);
+
+    setSelectedLocation(null);
+    setLocationPreview(null);
+
+    /*
+     * Remove old suggestions immediately.
+     * Fresh ones will appear after the debounce.
+     */
+    setSuggestions([]);
+    setShowSuggestions(false);
+
+    setSearching(false);
+
+    setError("");
+    setMessage("");
+  }
+
+  /* =========================================================
+     SAVE DESTINATION
+  ========================================================= */
+
   async function handleSave() {
     if (!locationPreview) {
       setError("Select a destination first.");
+
       return;
     }
 
     try {
       setSaving(true);
+
       setError("");
       setMessage("");
 
@@ -177,11 +411,15 @@ function SavedPage() {
 
       setMessage(`${locationPreview.city} saved successfully.`);
 
+      suggestionRequestRef.current += 1;
+
       setCity("");
+
       setSuggestions([]);
+      setShowSuggestions(false);
+
       setSelectedLocation(null);
       setLocationPreview(null);
-      setShowSuggestions(false);
 
       await loadDestinations();
     } catch (saveError) {
@@ -190,6 +428,10 @@ function SavedPage() {
       setSaving(false);
     }
   }
+
+  /* =========================================================
+     DELETE DESTINATION
+  ========================================================= */
 
   async function handleDelete(destination) {
     const confirmed = window.confirm(
@@ -202,6 +444,7 @@ function SavedPage() {
 
     try {
       setDeletingId(destination.id);
+
       setError("");
       setMessage("");
 
@@ -217,9 +460,17 @@ function SavedPage() {
     }
   }
 
+  /* =========================================================
+     UI
+  ========================================================= */
+
   return (
     <div className="saved-page">
       <div className="saved-page-container">
+        {/* =========================
+            BACK
+        ========================= */}
+
         <button
           className="saved-back-button"
           type="button"
@@ -228,6 +479,10 @@ function SavedPage() {
           <ArrowLeft size={18} />
           Dashboard
         </button>
+
+        {/* =========================
+            HEADING
+        ========================= */}
 
         <section className="saved-heading">
           <div>
@@ -250,6 +505,10 @@ function SavedPage() {
           </div>
         </section>
 
+        {/* =========================
+            SEARCH CARD
+        ========================= */}
+
         <section className="saved-search-card">
           <div className="saved-search-heading">
             <div className="saved-search-icon">
@@ -266,6 +525,10 @@ function SavedPage() {
             </div>
           </div>
 
+          {/* =========================
+              SEARCH FORM
+          ========================= */}
+
           <form className="saved-search-form" onSubmit={handleSearch}>
             <Search size={18} />
 
@@ -274,19 +537,20 @@ function SavedPage() {
               placeholder="Search city, e.g. Hyderabad"
               value={city}
               autoComplete="off"
-              onChange={(event) => {
-                setCity(event.target.value);
-
-                setSelectedLocation(null);
-                setLocationPreview(null);
-                setError("");
-              }}
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              onChange={handleCityChange}
             />
 
             <button type="submit" disabled={searching}>
               {searching ? "Searching..." : "Search"}
             </button>
           </form>
+
+          {/* =========================
+              AUTOCOMPLETE
+          ========================= */}
 
           {showSuggestions && suggestions.length > 0 && (
             <div className="saved-suggestions">
@@ -302,7 +566,7 @@ function SavedPage() {
                   </div>
 
                   <div>
-                    <strong>{location.name}</strong>
+                    <strong>{getLocationName(location)}</strong>
 
                     <span>
                       {[location.district, location.region, location.country]
@@ -314,6 +578,10 @@ function SavedPage() {
               ))}
             </div>
           )}
+
+          {/* =========================
+              FREE PLAN LIMIT
+          ========================= */}
 
           {!canSaveMore && plan !== "pro" && (
             <div className="saved-limit-message">
@@ -330,6 +598,10 @@ function SavedPage() {
             </div>
           )}
 
+          {/* =========================
+              SELECTED LOCATION
+          ========================= */}
+
           {locationPreview && (
             <div className="saved-location-preview">
               <div className="saved-location-preview-info">
@@ -343,7 +615,8 @@ function SavedPage() {
                   <span>{locationPreview.country}</span>
 
                   <small>
-                    {Number(locationPreview.latitude).toFixed(4)},{" "}
+                    {Number(locationPreview.latitude).toFixed(4)}
+                    {", "}
                     {Number(locationPreview.longitude).toFixed(4)}
                   </small>
                 </div>
@@ -361,10 +634,18 @@ function SavedPage() {
             </div>
           )}
 
+          {/* =========================
+              MESSAGES
+          ========================= */}
+
           {message && <div className="saved-success-message">{message}</div>}
 
           {error && <div className="saved-error-message">{error}</div>}
         </section>
+
+        {/* =========================
+            SAVED LIST
+        ========================= */}
 
         <section className="saved-list-section">
           <div className="saved-list-heading">
@@ -408,7 +689,8 @@ function SavedPage() {
 
                       {destination.latitude && destination.longitude && (
                         <small>
-                          {Number(destination.latitude).toFixed(4)},{" "}
+                          {Number(destination.latitude).toFixed(4)}
+                          {", "}
                           {Number(destination.longitude).toFixed(4)}
                         </small>
                       )}
