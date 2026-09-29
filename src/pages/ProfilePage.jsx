@@ -1,84 +1,292 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
-import MobileNav from "../components/dashboard/MobileNav";
-import {
-  ArrowLeft,
-  BadgeCheck,
-  Crown,
-  Mail,
-  ShieldCheck,
-  Trash2,
-  User,
-} from "lucide-react";
 
 import {
   deleteProfile,
   getProfile,
+  requestPasswordChange,
   updateProfile,
+  verifyPasswordChange,
 } from "../services/profile.service";
 
 import "../styles/profile.css";
 
-function ProfilePage() {
+export default function ProfilePage() {
   const navigate = useNavigate();
 
+  /* =========================================================
+     PROFILE STATE
+  ========================================================= */
+
   const [profile, setProfile] = useState(null);
+
   const [name, setName] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const [profileSuccess, setProfileSuccess] = useState("");
+
+  const [profileError, setProfileError] = useState("");
+
+  /* =========================================================
+     PASSWORD STATE
+  ========================================================= */
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [passwordStep, setPasswordStep] = useState("password");
+
+  const [passwordVerificationCode, setPasswordVerificationCode] = useState("");
+
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+
+  const [passwordError, setPasswordError] = useState("");
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  /* =========================================================
+     DELETE STATE
+  ========================================================= */
+
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  /* =========================================================
+     LOAD PROFILE
+  ========================================================= */
 
   useEffect(() => {
     async function loadProfile() {
       try {
-        const profileData = await getProfile();
+        setLoading(true);
 
-        setProfile(profileData);
-        setName(profileData.name);
-      } catch (profileError) {
-        setError(profileError.message);
+        const data = await getProfile();
+
+        const userData = data.user || data.profile || data;
+
+        setProfile(userData);
+
+        setName(userData.name || "");
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+
+        if (error.status === 401) {
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        setProfileError(error.message || "Unable to load your profile.");
       } finally {
         setLoading(false);
       }
     }
 
     loadProfile();
-  }, []);
+  }, [navigate]);
 
-  async function handleSubmit(event) {
+  /* =========================================================
+     UPDATE PROFILE
+  ========================================================= */
+
+  async function handleProfileSubmit(event) {
     event.preventDefault();
 
-    const cleanName = name.trim();
+    setProfileSuccess("");
+    setProfileError("");
 
-    if (!cleanName) {
-      setError("Name is required.");
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      setProfileError("Name is required.");
+
       return;
     }
 
     try {
-      setSaving(true);
-      setError("");
-      setMessage("");
+      setSavingProfile(true);
 
-      const data = await updateProfile(cleanName);
+      const data = await updateProfile(trimmedName);
 
-      setProfile(data.profile);
-      setName(data.profile.name);
-      setMessage("Profile updated successfully.");
-    } catch (profileError) {
-      setError(profileError.message);
+      const updatedProfile = data.user ||
+        data.profile || {
+          ...profile,
+          name: trimmedName,
+        };
+
+      setProfile((previousProfile) => ({
+        ...previousProfile,
+        ...updatedProfile,
+
+        name: updatedProfile.name || trimmedName,
+      }));
+
+      setName(updatedProfile.name || trimmedName);
+
+      setProfileSuccess(data.message || "Profile updated successfully.");
+    } catch (error) {
+      console.error("Profile update failed:", error);
+
+      setProfileError(error.message || "Unable to update profile.");
     } finally {
-      setSaving(false);
+      setSavingProfile(false);
     }
   }
 
+  /* =========================================================
+     PASSWORD INPUT
+  ========================================================= */
+
+  function handlePasswordInputChange(event) {
+    const { name: fieldName, value } = event.target;
+
+    setPasswordForm((previousForm) => ({
+      ...previousForm,
+
+      [fieldName]: value,
+    }));
+
+    setPasswordError("");
+    setPasswordSuccess("");
+  }
+
+  /* =========================================================
+     REQUEST PASSWORD CHANGE
+  ========================================================= */
+
+  async function handlePasswordSubmit(event) {
+    event.preventDefault();
+
+    setPasswordSuccess("");
+    setPasswordError("");
+
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Please complete all password fields.");
+
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters.");
+
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirm password do not match.");
+
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setPasswordError(
+        "Your new password must be different from your current password.",
+      );
+
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+
+      const data = await requestPasswordChange({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      setPasswordStep("verify");
+
+      setPasswordSuccess(
+        data.message || "Verification code sent to your email.",
+      );
+    } catch (error) {
+      console.error("Password verification request failed:", error);
+
+      setPasswordError(error.message || "Unable to send verification code.");
+    } finally {
+      setChangingPassword(false);
+    }
+  }
+
+  /* =========================================================
+     VERIFY PASSWORD CODE
+  ========================================================= */
+
+  async function handlePasswordVerification(event) {
+    event.preventDefault();
+
+    setPasswordSuccess("");
+    setPasswordError("");
+
+    const cleanCode = passwordVerificationCode.trim();
+
+    if (!cleanCode) {
+      setPasswordError("Please enter the verification code.");
+
+      return;
+    }
+
+    if (!/^\d{6}$/.test(cleanCode)) {
+      setPasswordError("Verification code must contain 6 digits.");
+
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+
+      const data = await verifyPasswordChange(cleanCode);
+
+      setPasswordSuccess(data.message || "Password changed successfully.");
+
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setPasswordVerificationCode("");
+
+      setPasswordStep("password");
+
+      setShowCurrentPassword(false);
+
+      setShowNewPassword(false);
+
+      setShowConfirmPassword(false);
+    } catch (error) {
+      console.error("Password verification failed:", error);
+
+      setPasswordError(error.message || "Unable to verify code.");
+    } finally {
+      setChangingPassword(false);
+    }
+  }
+
+  /* =========================================================
+     DELETE ACCOUNT
+  ========================================================= */
+
   async function handleDeleteAccount() {
     const confirmed = window.confirm(
-      "Are you sure you want to permanently delete your TripWise account?",
+      "Are you sure you want to permanently delete your TripWise account? This action cannot be undone.",
     );
 
     if (!confirmed) {
@@ -86,140 +294,163 @@ function ProfilePage() {
     }
 
     try {
-      setDeleting(true);
-      setError("");
+      setDeletingAccount(true);
 
       await deleteProfile();
 
       navigate("/login", {
         replace: true,
       });
-    } catch (profileError) {
-      setError(profileError.message);
-      setDeleting(false);
+    } catch (error) {
+      console.error("Delete account failed:", error);
+
+      setProfileError(error.message || "Unable to delete account.");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    } finally {
+      setDeletingAccount(false);
     }
   }
+
+  /* =========================================================
+     INITIALS
+  ========================================================= */
+
+  function getInitials() {
+    const profileName = profile?.name?.trim();
+
+    if (!profileName) {
+      return "TW";
+    }
+
+    const words = profileName.split(" ").filter(Boolean);
+
+    if (words.length === 1) {
+      return words[0].slice(0, 2).toUpperCase();
+    }
+
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return <div className="profile-loading">Loading your profile...</div>;
   }
 
-  if (!profile) {
-    return (
-      <div className="profile-loading">
-        {error || "Unable to load profile."}
-      </div>
-    );
-  }
-
-  const initials = profile.name
-    .split(" ")
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
-    <div className="profile-page">
+    <main className="profile-page">
       <div className="profile-container">
+        {/* BACK */}
+
         <button
-          className="profile-back-button"
           type="button"
-          onClick={() => navigate("/dashboard")}
+          className="profile-back-button"
+          onClick={() => navigate(-1)}
         >
-          <ArrowLeft size={18} />
-          Dashboard
+          <span aria-hidden="true">←</span>
+          Back
         </button>
 
-        <div className="profile-heading">
-          <div>
-            <span>ACCOUNT</span>
+        {/* HEADING */}
 
-            <h1>Your Profile</h1>
+        <header className="profile-heading">
+          <span>ACCOUNT SETTINGS</span>
 
-            <p>Manage your personal TripWise account information.</p>
-          </div>
-        </div>
+          <h1>Your Profile</h1>
+
+          <p>
+            Manage your TripWise personal information, account security, and
+            preferences.
+          </p>
+        </header>
 
         <section className="profile-layout">
-          <div className="profile-summary-card">
-            <div className="profile-large-avatar">{initials}</div>
+          {/* LEFT SUMMARY */}
 
-            <h2>{profile.name}</h2>
+          <aside className="profile-summary-card">
+            <div className="profile-large-avatar">{getInitials()}</div>
 
-            <p>{profile.email}</p>
+            <h2>{profile?.name || "TripWise User"}</h2>
+
+            <p>{profile?.email || "No email available"}</p>
 
             <div className="profile-plan-badge">
-              <Crown size={14} />
+              <span>●</span>
 
-              {profile.plan === "pro" ? "Pro Plan" : "Free Plan"}
+              {profile?.plan ? `${profile.plan} Plan` : "Free Plan"}
             </div>
 
             <div className="profile-account-info">
               <div>
-                <User size={17} />
-
                 <span>
-                  <small>Account ID</small>
-                  <strong>#{profile.id}</strong>
+                  <small>EMAIL ADDRESS</small>
+
+                  <strong>{profile?.email || "Not available"}</strong>
                 </span>
               </div>
 
               <div>
-                <ShieldCheck size={17} />
-
                 <span>
-                  <small>Sign-in method</small>
+                  <small>ACCOUNT</small>
+
                   <strong>
-                    {profile.auth_provider === "google"
-                      ? "Google"
-                      : "Email & Password"}
+                    {profile?.plan === "pro" ? "TripWise Pro" : "TripWise Free"}
                   </strong>
                 </span>
               </div>
 
-              <div>
-                <BadgeCheck size={17} />
+              {profile?.created_at && (
+                <div>
+                  <span>
+                    <small>MEMBER SINCE</small>
 
-                <span>
-                  <small>Email status</small>
-                  <strong>
-                    {profile.is_verified ? "Verified" : "Not verified"}
-                  </strong>
-                </span>
-              </div>
+                    <strong>
+                      {new Date(profile.created_at).toLocaleDateString()}
+                    </strong>
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
+          </aside>
+
+          {/* RIGHT */}
 
           <div className="profile-settings">
-            <div className="profile-form-card">
-              <div className="profile-section-heading">
-                <div>
-                  <h2>Personal Information</h2>
+            {/* PERSONAL INFO */}
 
-                  <p>Update the name associated with your TripWise account.</p>
-                </div>
+            <section className="profile-form-card">
+              <div className="profile-section-heading">
+                <h2>Personal Information</h2>
+
+                <p>Update your basic TripWise account information.</p>
               </div>
 
-              {message && (
-                <div className="profile-success-message">{message}</div>
+              {profileSuccess && (
+                <div className="profile-success-message">{profileSuccess}</div>
               )}
 
-              {error && <div className="profile-error-message">{error}</div>}
+              {profileError && (
+                <div className="profile-error-message">{profileError}</div>
+              )}
 
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleProfileSubmit}>
                 <div className="profile-form-group">
                   <label htmlFor="profile-name">Full Name</label>
 
                   <div className="profile-input">
-                    <User size={18} />
-
                     <input
                       id="profile-name"
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      maxLength={100}
+                      placeholder="Enter your full name"
+                      autoComplete="name"
                     />
                   </div>
                 </div>
@@ -228,44 +459,216 @@ function ProfilePage() {
                   <label htmlFor="profile-email">Email Address</label>
 
                   <div className="profile-input profile-input-disabled">
-                    <Mail size={18} />
-
                     <input
                       id="profile-email"
                       type="email"
-                      value={profile.email}
+                      value={profile?.email || ""}
                       disabled
+                      readOnly
                     />
                   </div>
 
                   <small>
-                    Email changes are currently disabled because email
-                    verification is required.
+                    Your account email cannot be changed from this page.
                   </small>
                 </div>
 
                 <button
-                  className="profile-save-button"
                   type="submit"
-                  disabled={saving}
+                  className="profile-save-button"
+                  disabled={savingProfile}
                 >
-                  {saving ? "Saving..." : "Save Changes"}
+                  {savingProfile ? "Saving..." : "Save Changes"}
                 </button>
               </form>
-            </div>
+            </section>
 
-            <div className="profile-danger-card">
+            {/* CHANGE PASSWORD */}
+
+            <section className="profile-form-card">
+              <div className="profile-section-heading">
+                <h2>Change Password</h2>
+
+                <p>
+                  For your security, TripWise will verify your registered email
+                  before changing your password.
+                </p>
+              </div>
+
+              {passwordSuccess && (
+                <div className="profile-success-message">{passwordSuccess}</div>
+              )}
+
+              {passwordError && (
+                <div className="profile-error-message">{passwordError}</div>
+              )}
+
+              {passwordStep === "password" ? (
+                <form onSubmit={handlePasswordSubmit}>
+                  <div className="profile-form-group">
+                    <label htmlFor="current-password">Current Password</label>
+
+                    <div className="profile-input">
+                      <input
+                        id="current-password"
+                        name="currentPassword"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={passwordForm.currentPassword}
+                        onChange={handlePasswordInputChange}
+                        placeholder="Enter current password"
+                        autoComplete="current-password"
+                      />
+
+                      <button
+                        type="button"
+                        className="profile-password-toggle"
+                        onClick={() =>
+                          setShowCurrentPassword((previous) => !previous)
+                        }
+                      >
+                        {showCurrentPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="profile-form-group">
+                    <label htmlFor="new-password">New Password</label>
+
+                    <div className="profile-input">
+                      <input
+                        id="new-password"
+                        name="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordInputChange}
+                        placeholder="Enter new password"
+                        autoComplete="new-password"
+                      />
+
+                      <button
+                        type="button"
+                        className="profile-password-toggle"
+                        onClick={() =>
+                          setShowNewPassword((previous) => !previous)
+                        }
+                      >
+                        {showNewPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="profile-form-group">
+                    <label htmlFor="confirm-password">
+                      Confirm New Password
+                    </label>
+
+                    <div className="profile-input">
+                      <input
+                        id="confirm-password"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordInputChange}
+                        placeholder="Confirm new password"
+                        autoComplete="new-password"
+                      />
+
+                      <button
+                        type="button"
+                        className="profile-password-toggle"
+                        onClick={() =>
+                          setShowConfirmPassword((previous) => !previous)
+                        }
+                      >
+                        {showConfirmPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="profile-save-button"
+                    disabled={changingPassword}
+                  >
+                    {changingPassword ? "Sending..." : "Send Code"}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handlePasswordVerification}>
+                  <div className="profile-form-group">
+                    <label htmlFor="password-code">Verification Code</label>
+
+                    <div className="profile-input">
+                      <input
+                        id="password-code"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={passwordVerificationCode}
+                        onChange={(event) => {
+                          const value = event.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 6);
+
+                          setPasswordVerificationCode(value);
+
+                          setPasswordError("");
+                        }}
+                        placeholder="Enter 6-digit code"
+                      />
+                    </div>
+
+                    <small>
+                      A 6-digit verification code was sent to {profile?.email}.
+                    </small>
+                  </div>
+
+                  <div className="profile-password-actions">
+                    <button
+                      type="submit"
+                      className="profile-save-button"
+                      disabled={
+                        changingPassword ||
+                        passwordVerificationCode.length !== 6
+                      }
+                    >
+                      {changingPassword ? "Verifying..." : "Verify Code"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-secondary-button"
+                      disabled={changingPassword}
+                      onClick={() => {
+                        setPasswordStep("password");
+
+                        setPasswordVerificationCode("");
+
+                        setPasswordSuccess("");
+
+                        setPasswordError("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </section>
+
+            {/* DANGER */}
+
+            <section className="profile-danger-card">
               <div>
-                <span className="profile-danger-icon">
-                  <Trash2 size={19} />
-                </span>
+                <div className="profile-danger-icon">!</div>
 
                 <div>
                   <h2>Delete Account</h2>
 
                   <p>
-                    Permanently remove your TripWise account and account
-                    information.
+                    Permanently delete your TripWise account and account data.
+                    This action cannot be undone.
                   </p>
                 </div>
               </div>
@@ -273,17 +676,14 @@ function ProfilePage() {
               <button
                 type="button"
                 onClick={handleDeleteAccount}
-                disabled={deleting}
+                disabled={deletingAccount}
               >
-                {deleting ? "Deleting..." : "Delete Account"}
+                {deletingAccount ? "Deleting..." : "Delete"}
               </button>
-            </div>
+            </section>
           </div>
         </section>
       </div>
-      <MobileNav />
-    </div>
+    </main>
   );
 }
-
-export default ProfilePage;

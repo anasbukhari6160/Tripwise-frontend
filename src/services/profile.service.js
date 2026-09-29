@@ -1,52 +1,99 @@
-const PROFILE_API_URL = "http://localhost:3000/api/profile";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-export async function getProfile() {
-  const response = await fetch(PROFILE_API_URL, {
-    method: "GET",
+async function profileRequest(path = "", options = {}) {
+  const response = await fetch(`${API_BASE_URL}/api/profile${path}`, {
+    ...options,
+
     credentials: "include",
-  });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to load profile.");
-  }
-
-  return data.profile;
-}
-
-export async function updateProfile(name) {
-  const response = await fetch(PROFILE_API_URL, {
-    method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      ...(options.headers || {}),
     },
-    credentials: "include",
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const error = new Error(data.message || "Profile request failed.");
+
+    error.status = response.status;
+    error.code = data.code || null;
+
+    throw error;
+  }
+
+  return data;
+}
+
+/* =========================================================
+   GET PROFILE
+========================================================= */
+
+export async function getProfile() {
+  return profileRequest();
+}
+
+/* =========================================================
+   UPDATE PROFILE
+========================================================= */
+
+export async function updateProfile(name) {
+  return profileRequest("", {
+    method: "PUT",
+
     body: JSON.stringify({
       name,
     }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to update profile.");
-  }
-
-  return data;
 }
 
-export async function deleteProfile() {
-  const response = await fetch(PROFILE_API_URL, {
-    method: "DELETE",
-    credentials: "include",
+/* =========================================================
+   REQUEST PASSWORD CHANGE
+========================================================= */
+
+export async function requestPasswordChange({
+  currentPassword,
+  newPassword,
+  confirmPassword,
+}) {
+  return profileRequest("/password/request-change", {
+    method: "POST",
+
+    body: JSON.stringify({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    }),
   });
+}
 
-  const data = await response.json();
+/* =========================================================
+   VERIFY PASSWORD CHANGE
+========================================================= */
 
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to delete account.");
-  }
+export async function verifyPasswordChange(code) {
+  return profileRequest("/password/verify-change", {
+    method: "POST",
 
-  return data;
+    body: JSON.stringify({
+      code,
+    }),
+  });
+}
+
+/* =========================================================
+   DELETE ACCOUNT
+========================================================= */
+
+export async function deleteProfile() {
+  return profileRequest("", {
+    method: "DELETE",
+  });
 }
