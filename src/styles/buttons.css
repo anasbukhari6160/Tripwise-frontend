@@ -1,0 +1,185 @@
+/* =====================================================
+   TRIPWISE GLOBAL BUTTON SYSTEM
+   Standard size based on "My Trips" button
+===================================================== */
+
+:root {
+  --tw-button-width: 114px;
+  --tw-button-height: 54px;
+  --tw-button-radius: 11px;
+}
+
+/* =========================
+   BASE BUTTON
+========================= */
+
+.tw-button {
+  width: var(--tw-button-width);
+  min-width: var(--tw-button-width);
+  max-width: var(--tw-button-width);
+
+  height: var(--tw-button-height);
+  min-height: var(--tw-button-height);
+  max-height: var(--tw-button-height);
+
+  padding: 0 14px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  flex: 0 0 var(--tw-button-width);
+
+  box-sizing: border-box;
+
+  border-radius: var(--tw-button-radius);
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+
+  text-align: center;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.tw-button svg {
+  width: 16px;
+  height: 16px;
+
+  flex-shrink: 0;
+}
+
+/* =========================
+   NEUTRAL / BACK BUTTON
+========================= */
+
+.tw-button-neutral {
+  border: 1px solid #2a3526;
+
+  background: #090d08;
+  color: #98a293;
+}
+
+.tw-button-neutral:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  border-color: rgba(202, 255, 51, 0.28);
+
+  background: rgba(202, 255, 51, 0.035);
+  color: #caff33;
+}
+
+/* =========================
+   PRIMARY BUTTON
+========================= */
+
+.tw-button-primary {
+  border: 1px solid #caff33;
+
+  background: #caff33;
+  color: #080b06;
+
+  font-weight: 800;
+}
+
+.tw-button-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 28px rgba(202, 255, 51, 0.14);
+}
+
+/* =========================
+   SECONDARY / EDIT BUTTON
+========================= */
+
+.tw-button-secondary {
+  border: 1px solid rgba(202, 255, 51, 0.22);
+
+  background: rgba(202, 255, 51, 0.06);
+  color: #caff33;
+}
+
+.tw-button-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  border-color: rgba(202, 255, 51, 0.4);
+
+  background: rgba(202, 255, 51, 0.11);
+}
+
+/* =========================
+   DANGER BUTTON
+========================= */
+
+.tw-button-danger {
+  border: 1px solid rgba(223, 143, 143, 0.22);
+
+  background: rgba(223, 143, 143, 0.045);
+  color: #df8f8f;
+}
+
+.tw-button-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  border-color: rgba(223, 143, 143, 0.4);
+
+  background: rgba(223, 143, 143, 0.09);
+}
+
+/* =========================
+   DISABLED
+========================= */
+
+.tw-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* =========================
+   BUTTON GROUP
+========================= */
+
+.tw-button-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 560px) {
+  .tw-button {
+    width: var(--tw-button-width);
+    min-width: var(--tw-button-width);
+    max-width: var(--tw-button-width);
+
+    height: var(--tw-button-height);
+    min-height: var(--tw-button-height);
+    max-height: var(--tw-button-height);
+
+    flex: 0 0 var(--tw-button-width);
+  }
+
+  .tw-button-group {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

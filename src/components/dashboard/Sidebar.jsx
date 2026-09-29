@@ -1,43 +1,71 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import {
+  Bookmark,
   CloudSun,
-  Compass,
   Crown,
   LayoutDashboard,
-  MapPinned,
-  Route,
-  Settings,
-  User,
+  LogOut,
+  MapPin,
+  Route as RouteIcon,
+  UserRound,
 } from "lucide-react";
 
-import { createCheckoutSession } from "../../services/payment.service";
-
 function Sidebar({ user }) {
-  const [upgrading, setUpgrading] = useState(false);
-  const [upgradeError, setUpgradeError] = useState("");
+  const navigate = useNavigate();
+
+  const [signingOut, setSigningOut] = useState(false);
 
   const isPro = user?.plan === "pro";
 
-  async function handleUpgrade() {
+  function getLinkClass({ isActive }) {
+    return isActive ? "sidebar-link active" : "sidebar-link";
+  }
+
+  function handleProClick() {
+    const proSection = document.getElementById("pro-section");
+
+    if (proSection) {
+      proSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      return;
+    }
+
+    navigate("/dashboard");
+  }
+
+  async function handleSignOut() {
+    if (signingOut) {
+      return;
+    }
+
     try {
-      setUpgrading(true);
-      setUpgradeError("");
+      setSigningOut(true);
 
-      const data = await createCheckoutSession();
+      const response = await fetch("http://localhost:3000/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
-      if (!data.checkoutUrl) {
-        throw new Error("Stripe checkout URL was not returned.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to sign out.");
       }
 
-      window.location.href = data.checkoutUrl;
+      navigate("/login", {
+        replace: true,
+      });
     } catch (error) {
-      console.error("Sidebar Stripe checkout error:", error);
+      console.error("Sign out error:", error);
 
-      setUpgradeError(error.message || "Unable to start Stripe checkout.");
+      window.alert(error.message || "Unable to sign out.");
     } finally {
-      setUpgrading(false);
+      setSigningOut(false);
     }
   }
 
@@ -47,93 +75,71 @@ function Sidebar({ user }) {
         Trip<span>Wise</span>
       </div>
 
-      <nav className="sidebar-nav">
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? "active" : ""}`
-          }
-        >
-          <LayoutDashboard size={19} />
-          <span>Overview</span>
-        </NavLink>
+      <div className="sidebar-scroll-area">
+        <nav className="sidebar-nav">
+          <NavLink to="/dashboard" className={getLinkClass}>
+            <LayoutDashboard size={19} />
+            <span>Overview</span>
+          </NavLink>
 
-        <NavLink
-          to="/weather"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? "active" : ""}`
-          }
-        >
-          <CloudSun size={19} />
-          <span>Weather</span>
-        </NavLink>
+          <NavLink to="/weather" className={getLinkClass}>
+            <CloudSun size={19} />
+            <span>Weather</span>
+          </NavLink>
 
-        <a className="sidebar-link" href="#">
-          <Route size={19} />
-          <span>My Trips</span>
-        </a>
+          <NavLink to="/trips" className={getLinkClass}>
+            <RouteIcon size={19} />
+            <span>My Trips</span>
+          </NavLink>
 
-        <NavLink
-          to="/saved"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? "active" : ""}`
-          }
-        >
-          <MapPinned size={19} />
-          <span>Saved</span>
-        </NavLink>
+          <NavLink to="/saved" className={getLinkClass}>
+            <Bookmark size={19} />
+            <span>Saved</span>
+          </NavLink>
 
-        <a className="sidebar-link" href="#">
-          <Compass size={19} />
-          <span>Trip Planner</span>
-        </a>
+          <NavLink to="/trip-planner" className={getLinkClass}>
+            <MapPin size={19} />
+            <span>Trip Planner</span>
+          </NavLink>
+        </nav>
+      </div>
 
-        <NavLink
-          to="/profile"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? "active" : ""}`
-          }
-        >
-          <User size={19} />
-          <span>Profile</span>
-        </NavLink>
-      </nav>
-
-      <div className="sidebar-bottom">
+      <div className="sidebar-fixed-bottom">
         <div className="sidebar-pro-card">
           <div className="sidebar-pro-icon">
             <Crown size={18} />
           </div>
 
-          <div>
-            <strong>{isPro ? "TripWise Pro" : "Upgrade to Pro"}</strong>
+          <strong>TripWise Pro</strong>
 
-            <p>
-              {isPro
-                ? "Premium features unlocked."
-                : "Unlock smarter travel tools."}
-            </p>
-          </div>
+          <p>
+            {isPro
+              ? "Premium features unlocked."
+              : "Unlock premium travel features."}
+          </p>
 
-          {isPro ? (
-            <button type="button" disabled>
-              Pro Active
-            </button>
-          ) : (
-            <button type="button" onClick={handleUpgrade} disabled={upgrading}>
-              {upgrading ? "Opening..." : "Upgrade"}
-            </button>
-          )}
-
-          {upgradeError && (
-            <small className="sidebar-pro-error">{upgradeError}</small>
-          )}
+          <button type="button" onClick={handleProClick}>
+            {isPro ? "Manage Pro" : "Upgrade to Pro"}
+          </button>
         </div>
 
-        <a className="sidebar-link" href="#">
-          <Settings size={19} />
-          <span>Settings</span>
-        </a>
+        <div className="sidebar-account-actions">
+          <NavLink to="/profile" className={getLinkClass}>
+            <UserRound size={19} />
+            <span>Profile</span>
+          </NavLink>
+
+          <button
+            type="button"
+            className="sidebar-signout-button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+          >
+            <LogOut size={19} />
+
+            <span>{signingOut ? "Signing Out..." : "Sign Out"}</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

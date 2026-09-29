@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -91,6 +91,8 @@ function WeatherPage() {
 
   const [selectedLocation, setSelectedLocation] = useState(null);
 
+  const locationSearchRequestRef = useRef(0);
+
   useEffect(() => {
     async function loadDefaultWeather() {
       try {
@@ -114,37 +116,59 @@ function WeatherPage() {
 
   useEffect(() => {
     const cleanQuery = query.trim();
+    const requestId = ++locationSearchRequestRef.current;
 
     if (cleanQuery.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
-      return;
+
+      return undefined;
     }
 
     if (selectedLocation && query === getLocationLabel(selectedLocation)) {
-      return;
+      setSuggestions([]);
+      setShowSuggestions(false);
+
+      return undefined;
     }
 
     const timer = setTimeout(async () => {
+      if (requestId !== locationSearchRequestRef.current) {
+        return;
+      }
+
       try {
         setSearchingLocations(true);
 
         const results = await searchLocations(cleanQuery);
 
-        setSuggestions(results || []);
+        if (requestId !== locationSearchRequestRef.current) {
+          return;
+        }
 
-        setShowSuggestions(true);
+        const safeResults = Array.isArray(results) ? results : [];
+
+        setSuggestions(safeResults);
+        setShowSuggestions(safeResults.length > 0);
       } catch (error) {
+        if (requestId !== locationSearchRequestRef.current) {
+          return;
+        }
+
         console.error("Location suggestion error:", error);
 
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
-        setSearchingLocations(false);
+        if (requestId === locationSearchRequestRef.current) {
+          setSearchingLocations(false);
+        }
       }
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [query, selectedLocation]);
 
   async function handleSearch(event) {
@@ -152,12 +176,12 @@ function WeatherPage() {
 
     const cleanQuery = query.trim();
 
+    locationSearchRequestRef.current += 1;
+    setSuggestions([]);
+    setShowSuggestions(false);
+
     if (cleanQuery.length < 2) {
       setWeatherError("Enter at least 2 characters.");
-
-      setSuggestions([]);
-      setShowSuggestions(false);
-
       return;
     }
 
@@ -165,34 +189,54 @@ function WeatherPage() {
       setSearchingLocations(true);
       setWeatherError("");
 
-      const results = await searchLocations(cleanQuery);
+      let location = null;
 
-      setSuggestions(results || []);
+      if (selectedLocation && query === getLocationLabel(selectedLocation)) {
+        location = selectedLocation;
+      } else {
+        const results = await searchLocations(cleanQuery);
+        const safeResults = Array.isArray(results) ? results : [];
 
-      setShowSuggestions(true);
+        if (safeResults.length === 0) {
+          setWeatherError("No matching location found.");
+          return;
+        }
 
-      if (!results || results.length === 0) {
-        setWeatherError("No matching location found.");
+        location = safeResults[0];
+
+        setSelectedLocation(location);
+        setQuery(getLocationLabel(location));
       }
+
+      setSuggestions([]);
+      setShowSuggestions(false);
+
+      setLoadingWeather(true);
+
+      const weatherData = await getWeatherForLocation(location);
+
+      setWeather(weatherData);
     } catch (error) {
       console.error("Location search error:", error);
 
-      setWeatherError(error.message || "Unable to search locations.");
+      setWeatherError(error.message || "Unable to load weather.");
 
       setSuggestions([]);
       setShowSuggestions(false);
     } finally {
       setSearchingLocations(false);
+      setLoadingWeather(false);
     }
   }
 
   async function handleSelectLocation(location) {
-    setSelectedLocation(location);
-
-    setQuery(getLocationLabel(location));
+    locationSearchRequestRef.current += 1;
 
     setSuggestions([]);
     setShowSuggestions(false);
+
+    setSelectedLocation(location);
+    setQuery(getLocationLabel(location));
     setWeatherError("");
 
     try {
@@ -211,9 +255,13 @@ function WeatherPage() {
   }
 
   function handleQueryChange(event) {
-    setQuery(event.target.value);
+    locationSearchRequestRef.current += 1;
 
+    setQuery(event.target.value);
     setSelectedLocation(null);
+
+    setSuggestions([]);
+    setShowSuggestions(false);
     setWeatherError("");
   }
 

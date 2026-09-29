@@ -1,5 +1,10 @@
+/* =====================================================
+   TRIPWISE AUTH
+===================================================== */
+
 .auth-page {
   min-height: 100vh;
+
   position: relative;
 
   display: flex;
@@ -8,14 +13,28 @@
 
   padding: 40px 20px;
 
+  box-sizing: border-box;
+
   overflow: hidden;
 
   background:
-    radial-gradient(circle at 50% 5%, #27310b 0%, transparent 32%),
-    linear-gradient(135deg, #070a05, #020302);
+    radial-gradient(
+      circle at 50% 5%,
+      #27310b 0%,
+      transparent 32%
+    ),
+    linear-gradient(
+      135deg,
+      #070a05,
+      #020302
+    );
 
-  color: white;
+  color: #ffffff;
 }
+
+/* =========================
+   BACKGROUND TEXT
+========================= */
 
 .auth-background-text {
   position: absolute;
@@ -26,9 +45,7 @@
   transform: translateX(-50%);
 
   font-size: clamp(120px, 18vw, 280px);
-
   font-weight: 900;
-
   letter-spacing: -12px;
 
   color: transparent;
@@ -41,6 +58,11 @@
   user-select: none;
   pointer-events: none;
 }
+
+/* =========================
+   AUTH CARD
+========================= */
+
 .auth-card {
   width: 100%;
   max-width: 440px;
@@ -50,124 +72,56 @@
 
   padding: 42px 38px 30px;
 
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 32px;
+  box-sizing: border-box;
+
+  border:
+    1px solid rgba(211, 255, 63, 0.12);
+
+  border-radius: 30px;
 
   background:
     linear-gradient(
-      180deg,
-      rgba(16, 22, 8, 0.98),
-      rgba(3, 5, 3, 0.98)
+      145deg,
+      rgba(13, 18, 8, 0.97),
+      rgba(3, 5, 3, 0.99)
     );
 
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.45),
+    0 40px 100px rgba(0, 0, 0, 0.55),
+    0 0 80px rgba(177, 217, 34, 0.035),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
+
+/* =====================================================
+   NO LOGO ON AUTH PAGES
+   Required by TripWise UI direction
+===================================================== */
 
 .tripwise-logo {
-  width: 112px;
-  height: 112px;
-
-  position: relative;
-
-  display: grid;
-  place-items: center;
-
-  margin: 0 auto 30px;
+  display: none !important;
 }
 
-.logo-glow {
-  position: absolute;
+/* =========================
+   HEADING
+========================= */
 
-  width: 82px;
-  height: 82px;
-
-  border-radius: 50%;
-
-  background: #dfff47;
-
-  filter: blur(28px);
-
-  opacity: 0.22;
-}
-
-.logo-core {
-  width: 76px;
-  height: 76px;
-
-  position: relative;
-  z-index: 3;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle at 35% 28%,
-      #ecff78 0%,
-      #b8dc1f 28%,
-      #62770b 55%,
-      #172002 78%,
-      #080b03 100%
-    );
-
-  border: 1px solid rgba(229, 255, 89, 0.4);
-
-  box-shadow:
-    inset 0 1px 4px rgba(255, 255, 255, 0.35),
-    inset 0 -12px 24px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(213, 255, 61, 0.3),
-    0 0 55px rgba(213, 255, 61, 0.12);
-}
-
-.logo-svg {
-  width: 39px;
-  height: 39px;
-
-  color: #efff78;
-
-  filter:
-    drop-shadow(0 0 6px rgba(224, 255, 69, 0.45));
-}
-
-.logo-orbit {
-  position: absolute;
-
-  border: 1px solid rgba(221, 255, 68, 0.12);
-
-  border-radius: 50%;
-}
-
-.logo-orbit-one {
-  width: 96px;
-  height: 96px;
-
-  transform: rotate(22deg);
-}
-
-.logo-orbit-two {
-  width: 112px;
-  height: 56px;
-
-  transform: rotate(-14deg);
-}
 .auth-heading {
-  text-align: center;
   margin-bottom: 30px;
+
+  text-align: center;
 }
 
 .auth-heading h1 {
   margin: 0;
 
+  color: #f8faf5;
+
   font-size: 31px;
   font-weight: 700;
-
   letter-spacing: -0.8px;
-
-  color: #f8faf5;
 }
 
 .auth-heading p {
@@ -178,16 +132,24 @@
   color: #92988f;
 
   font-size: 13px;
-
   line-height: 1.65;
 }
+
+/* =========================
+   FORM
+========================= */
+
 .auth-form {
+  width: 100%;
+
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
 .form-group {
+  width: 100%;
+
   display: flex;
   flex-direction: column;
   gap: 9px;
@@ -202,20 +164,25 @@
 
 .form-group input {
   width: 100%;
+  min-height: 50px;
 
-  padding: 15px 16px;
+  padding: 0 16px;
+
+  box-sizing: border-box;
 
   border: 1px solid #30342f;
   border-radius: 11px;
-
   outline: none;
 
   background: rgba(5, 7, 5, 0.8);
+  color: #ffffff;
 
-  color: white;
+  font-family: inherit;
+  font-size: 13px;
 
   transition:
     border-color 0.2s ease,
+    background 0.2s ease,
     box-shadow 0.2s ease;
 }
 
@@ -226,14 +193,21 @@
 .form-group input:focus {
   border-color: #dfff47;
 
+  background: #070a06;
+
   box-shadow:
     0 0 0 3px rgba(223, 255, 71, 0.08);
 }
+
+/* =========================
+   LOGIN OPTIONS
+========================= */
 
 .login-options {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 
   margin-top: -2px;
 
@@ -242,7 +216,10 @@
 
 .login-options a {
   color: #e5e7e3;
+
   text-decoration: none;
+
+  transition: color 0.2s ease;
 }
 
 .login-options a:hover {
@@ -252,7 +229,6 @@
 .remember-me {
   display: flex;
   align-items: center;
-
   gap: 8px;
 
   color: #a6aba6;
@@ -264,15 +240,41 @@
   width: 16px;
   height: 16px;
 
+  flex-shrink: 0;
+
   accent-color: #dfff47;
 }
 
-.primary-button {
+/* =====================================================
+   AUTH BUTTON STANDARD
+   Auth actions stay full-width
+   Height is standardized at 54px
+===================================================== */
+
+.primary-button,
+.social-button {
   width: 100%;
+  min-height: 54px;
+  height: 54px;
 
+  box-sizing: border-box;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: inherit;
+
+  cursor: pointer;
+}
+
+/* =========================
+   PRIMARY BUTTON
+========================= */
+
+.primary-button {
   margin-top: 5px;
-
-  padding: 15px 18px;
+  padding: 0 18px;
 
   border: none;
   border-radius: 999px;
@@ -287,11 +289,9 @@
 
   color: #111506;
 
-  font-weight: 700;
-
+  font-size: 13px;
+  font-weight: 800;
   letter-spacing: -0.1px;
-
-  cursor: pointer;
 
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
@@ -299,10 +299,11 @@
 
   transition:
     transform 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.primary-button:hover {
+.primary-button:hover:not(:disabled) {
   transform: translateY(-2px);
 
   box-shadow:
@@ -310,9 +311,21 @@
     0 14px 38px rgba(210, 255, 48, 0.17);
 }
 
-.primary-button:active {
+.primary-button:active:not(:disabled) {
   transform: translateY(0);
 }
+
+.primary-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* =========================
+   DIVIDER
+========================= */
 
 .divider {
   display: flex;
@@ -329,9 +342,9 @@
 .divider::after {
   content: "";
 
-  flex: 1;
-
   height: 1px;
+
+  flex: 1;
 
   background: #242724;
 }
@@ -340,37 +353,44 @@
   padding: 0 14px;
 }
 
+/* =========================
+   SOCIAL BUTTON
+========================= */
+
 .social-button {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   gap: 10px;
 
-  padding: 13px 18px;
+  padding: 0 18px;
 
   border: 1px solid #292d29;
   border-radius: 999px;
 
   background: transparent;
-
-  color: white;
+  color: #ffffff;
 
   font-size: 14px;
-
-  cursor: pointer;
+  font-weight: 600;
 
   transition:
     border-color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
-.social-button:hover {
+.social-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+
   border-color: #4a5048;
 
   background: rgba(255, 255, 255, 0.025);
+}
+
+.social-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
 }
 
 .google-icon {
@@ -380,14 +400,20 @@
   display: grid;
   place-items: center;
 
+  flex-shrink: 0;
+
   border-radius: 50%;
 
-  background: white;
+  background: #ffffff;
   color: #4285f4;
 
-  font-weight: 800;
   font-size: 12px;
+  font-weight: 800;
 }
+
+/* =========================
+   SWITCH LINKS
+========================= */
 
 .auth-switch {
   margin: 28px 0 0;
@@ -400,11 +426,12 @@
 }
 
 .auth-switch a {
-  color: white;
+  color: #ffffff;
 
   font-weight: 600;
-
   text-decoration: none;
+
+  transition: color 0.2s ease;
 }
 
 .auth-switch a:hover {
@@ -415,63 +442,10 @@
   margin-top: 80px;
 }
 
-@media (max-width: 600px) {
-  .auth-page {
-    align-items: flex-start;
+/* =========================
+   ERROR / SUCCESS
+========================= */
 
-    padding: 20px 14px;
-
-    background: #020302;
-  }
-
-  .auth-background-text {
-    display: none;
-  }
-
-  .auth-card {
-  width: 100%;
-  max-width: 440px;
-
-  position: relative;
-  z-index: 2;
-
-  padding: 42px 38px 30px;
-
-  border:
-    1px solid rgba(211, 255, 63, 0.12);
-
-  border-radius: 30px;
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(13, 18, 8, 0.96),
-      rgba(3, 5, 3, 0.98)
-    );
-
-  box-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.55),
-    0 0 80px rgba(177, 217, 34, 0.035),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-
-  backdrop-filter: blur(18px);
-}
-  .travel-orb {
-    width: 90px;
-    height: 90px;
-
-    margin-bottom: 25px;
-  }
-
-  .orb-core {
-    width: 66px;
-    height: 66px;
-  }
-
-  .auth-heading h1 {
-    font-size: 27px;
-  }
-}
 .form-error {
   margin: 0;
   padding: 10px 12px;
@@ -480,42 +454,68 @@
   border-radius: 8px;
 
   background: rgba(255, 70, 70, 0.06);
-
   color: #ff8b8b;
 
   font-size: 13px;
-}.verification-email {
+  line-height: 1.5;
+}
+
+.form-success {
+  margin: 12px 0;
+
+  color: #baff66;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =====================================================
+   EMAIL VERIFICATION
+===================================================== */
+
+.verification-email {
   margin: 4px 0 28px;
+
   text-align: center;
+
   color: #f5f7f2;
+
   font-size: 15px;
   font-weight: 600;
+
+  overflow-wrap: anywhere;
 }
 
 .verification-code-group {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
   width: 100%;
+
+  display: grid;
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .verification-code-box {
   width: 100%;
   min-width: 0;
+
   aspect-ratio: 1 / 1;
+
   box-sizing: border-box;
 
   border: 1px solid #30372d;
   border-radius: 12px;
+  outline: none;
 
   background: #050805;
   color: #f5f7f2;
 
   text-align: center;
+
+  font-family: inherit;
   font-size: 24px;
   font-weight: 700;
 
-  outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -528,80 +528,219 @@
 
 .verification-code-box:focus {
   border-color: #caff33;
+
   background: #080c06;
-  box-shadow: 0 0 0 3px rgba(202, 255, 51, 0.1);
+
+  box-shadow:
+    0 0 0 3px rgba(202, 255, 51, 0.1);
 }
 
 .verification-note {
   margin: 20px 0 0;
+
   text-align: center;
+
   color: #8f988a;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================
+   RESEND CODE
+========================= */
+
+.resend-section {
+  margin-top: 14px;
+
+  text-align: center;
+}
+
+.resend-timer {
+  margin: 0;
+
+  color: #7f897a;
+
   font-size: 13px;
 }
 
+.text-button {
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+  color: #caff33;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.text-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.text-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   GOOGLE AUTH
+===================================================== */
+
+.google-login-wrapper {
+  width: 100%;
+
+  display: flex;
+  justify-content: center;
+}
+
+.google-auth-container {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+}
+
+.google-auth-container > div {
+  width: 100%;
+  max-width: 100%;
+}
+
+.google-auth-container iframe {
+  max-width: 100% !important;
+}
+
+/* =====================================================
+   TABLET / MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
+  .auth-page {
+    min-height: 100dvh;
+
+    align-items: flex-start;
+
+    padding: 20px 14px 30px;
+
+    overflow-y: auto;
+
+    background:
+      radial-gradient(
+        circle at 50% 0%,
+        rgba(202, 255, 51, 0.06),
+        transparent 28%
+      ),
+      #020302;
+  }
+
+  .auth-background-text {
+    display: none;
+  }
+
+  .auth-card {
+    max-width: 440px;
+
+    padding: 32px 22px 26px;
+
+    border-radius: 24px;
+  }
+
+  .auth-heading {
+    margin-bottom: 26px;
+  }
+
+  .auth-heading h1 {
+    font-size: 27px;
+  }
+
+  .auth-heading p {
+    font-size: 12px;
+  }
+
+  .forgot-switch {
+    margin-top: 45px;
+  }
+}
+
+/* =====================================================
+   SMALL MOBILE
+===================================================== */
+
 @media (max-width: 520px) {
+  .auth-page {
+    padding:
+      16px
+      12px
+      26px;
+  }
+
+  .auth-card {
+    padding:
+      28px
+      18px
+      24px;
+
+    border-radius: 22px;
+  }
+
   .verification-code-group {
     gap: 7px;
   }
 
   .verification-code-box {
     border-radius: 10px;
+
     font-size: 20px;
   }
-}
-.resend-section {
-  margin-top: 14px;
-  text-align: center;
-}
 
-.resend-timer {
-  margin: 0;
-  color: #7f897a;
-  font-size: 13px;
-}
-
-.text-button {
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #caff33;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.text-button:hover {
-  text-decoration: underline;
-}
-
-.form-success {
-  margin: 12px 0;
-  color: #baff66;
-  font-size: 13px;
-}
-.google-login-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-.google-auth-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.google-auth-container > div {
-  max-width: 100%;
-}
-
-@media (max-width: 520px) {
   .google-auth-container {
     width: 100%;
   }
 
   .google-auth-container iframe {
     max-width: 100% !important;
+  }
+}
+
+/* =====================================================
+   VERY SMALL MOBILE
+===================================================== */
+
+@media (max-width: 380px) {
+  .auth-card {
+    padding:
+      24px
+      14px
+      22px;
+  }
+
+  .auth-heading h1 {
+    font-size: 24px;
+  }
+
+  .verification-code-group {
+    gap: 5px;
+  }
+
+  .verification-code-box {
+    font-size: 18px;
+  }
+
+  .login-options {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
