@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
 import {
   Crown,
   CloudSun,
@@ -18,7 +19,9 @@ import {
 
 function ProFeaturesCard({ user }) {
   const [loading, setLoading] = useState(false);
+
   const [cancelLoading, setCancelLoading] = useState(false);
+
   const [reactivateLoading, setReactivateLoading] = useState(false);
 
   const [error, setError] = useState("");
@@ -26,13 +29,13 @@ function ProFeaturesCard({ user }) {
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false);
+  const [cancelAtPeriodEndOverride, setCancelAtPeriodEndOverride] =
+    useState(null);
 
   const isPro = user?.plan === "pro";
 
-  useEffect(() => {
-    setCancelAtPeriodEnd(user?.cancel_at_period_end === true);
-  }, [user?.cancel_at_period_end]);
+  const cancelAtPeriodEnd =
+    cancelAtPeriodEndOverride ?? user?.cancel_at_period_end === true;
 
   const features = [
     {
@@ -79,7 +82,7 @@ function ProFeaturesCard({ user }) {
 
       const data = await cancelSubscription();
 
-      setCancelAtPeriodEnd(true);
+      setCancelAtPeriodEndOverride(true);
 
       setMessage(
         data.message ||
@@ -106,7 +109,7 @@ function ProFeaturesCard({ user }) {
 
       const data = await reactivateSubscription();
 
-      setCancelAtPeriodEnd(false);
+      setCancelAtPeriodEndOverride(false);
 
       setMessage(
         data.message || "Your TripWise Pro subscription has been reactivated.",

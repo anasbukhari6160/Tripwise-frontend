@@ -1,223 +1,271 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
-import { searchLocations } from "../../services/location.service";
+import {
+  Crown,
+  CloudSun,
+  MapPinned,
+  Route,
+  Sparkles,
+  X,
+  AlertTriangle,
+  RotateCcw,
+} from "lucide-react";
 
-function DestinationSearch({
-  selectedLocation = null,
-  onSelect,
-  disabled = false,
-  label = "Destination",
-  placeholder = "Search city or destination...",
-}) {
-  const [query, setQuery] = useState(selectedLocation?.locationName || "");
+import {
+  createCheckoutSession,
+  cancelSubscription,
+  reactivateSubscription,
+} from "../../services/payment.service";
 
-  const [suggestions, setSuggestions] = useState([]);
+function ProFeaturesCard({ user }) {
   const [loading, setLoading] = useState(false);
+
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const [reactivateLoading, setReactivateLoading] = useState(false);
+
   const [error, setError] = useState("");
-  const [searched, setSearched] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const requestIdRef = useRef(0);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  useEffect(() => {
-    if (selectedLocation?.locationName) {
-      setQuery(selectedLocation.locationName);
-    }
-  }, [selectedLocation]);
+  const [cancelAtPeriodEndOverride, setCancelAtPeriodEndOverride] =
+    useState(null);
 
-  useEffect(() => {
-    const trimmedQuery = query.trim();
+  const isPro = user?.plan === "pro";
 
-    if (disabled || selectedLocation?.locationName === trimmedQuery) {
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
+  const cancelAtPeriodEnd =
+    cancelAtPeriodEndOverride ?? user?.cancel_at_period_end === true;
 
-    if (trimmedQuery.length < 2) {
-      setSuggestions([]);
+  const features = [
+    {
+      icon: <MapPinned size={17} />,
+      text: "Unlimited saved destinations",
+    },
+    {
+      icon: <CloudSun size={17} />,
+      text: "Extended weather insights",
+    },
+    {
+      icon: <Route size={17} />,
+      text: "Multi-city trip planning",
+    },
+  ];
+
+  async function handleUpgrade() {
+    try {
+      setLoading(true);
       setError("");
-      setSearched(false);
-      setOpen(false);
+      setMessage("");
+
+      const data = await createCheckoutSession();
+
+      if (!data.checkoutUrl) {
+        throw new Error("Stripe checkout URL was not returned.");
+      }
+
+      window.location.href = data.checkoutUrl;
+    } catch (error) {
+      console.error("Unable to start Stripe checkout:", error);
+
+      setError(error.message || "Unable to start Stripe checkout.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCancelSubscription() {
+    try {
+      setCancelLoading(true);
+      setError("");
+      setMessage("");
+
+      const data = await cancelSubscription();
+
+      setCancelAtPeriodEndOverride(true);
+
+      setMessage(
+        data.message ||
+          "Your subscription will cancel at the end of the current billing period.",
+      );
+
+      setShowCancelConfirm(false);
+    } catch (error) {
+      console.error("Unable to cancel subscription:", error);
+
+      setError(error.message || "Unable to cancel subscription.");
+
+      setShowCancelConfirm(false);
+    } finally {
+      setCancelLoading(false);
+    }
+  }
+
+  async function handleReactivateSubscription() {
+    try {
+      setReactivateLoading(true);
+      setError("");
+      setMessage("");
+
+      const data = await reactivateSubscription();
+
+      setCancelAtPeriodEndOverride(false);
+
+      setMessage(
+        data.message || "Your TripWise Pro subscription has been reactivated.",
+      );
+    } catch (error) {
+      console.error("Unable to reactivate subscription:", error);
+
+      setError(error.message || "Unable to reactivate subscription.");
+    } finally {
+      setReactivateLoading(false);
+    }
+  }
+
+  function handleOpenCancelModal() {
+    setError("");
+    setMessage("");
+    setShowCancelConfirm(true);
+  }
+
+  function handleCloseCancelModal() {
+    if (cancelLoading) {
       return;
     }
 
-    const timer = setTimeout(async () => {
-      const requestId = requestIdRef.current + 1;
-      requestIdRef.current = requestId;
-
-      try {
-        setLoading(true);
-        setError("");
-        setSearched(false);
-
-        const results = await searchLocations(trimmedQuery);
-
-        if (requestId !== requestIdRef.current) {
-          return;
-        }
-
-        setSuggestions(results);
-        setSearched(true);
-        setOpen(true);
-      } catch (err) {
-        if (requestId !== requestIdRef.current) {
-          return;
-        }
-
-        setSuggestions([]);
-        setSearched(true);
-        setOpen(true);
-
-        setError(err.message || "Unable to search destinations.");
-      } finally {
-        if (requestId === requestIdRef.current) {
-          setLoading(false);
-        }
-      }
-    }, 350);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [query, disabled, selectedLocation?.locationName]);
-
-  function handleChange(event) {
-    const value = event.target.value;
-
-    setQuery(value);
-    setError("");
-    setSearched(false);
-
-    if (selectedLocation) {
-      onSelect(null);
-    }
-
-    if (value.trim().length >= 2) {
-      setOpen(true);
-    } else {
-      setOpen(false);
-    }
-  }
-
-  function handleSelect(location) {
-    setQuery(location.locationName);
-    setSuggestions([]);
-    setOpen(false);
-    setError("");
-    setSearched(false);
-
-    onSelect(location);
-  }
-
-  function handleFocus() {
-    if (query.trim().length >= 2 && !selectedLocation) {
-      setOpen(true);
-    }
-  }
-
-  function handleBlur() {
-    setTimeout(() => {
-      setOpen(false);
-    }, 150);
-  }
-
-  function getSuggestionKey(location, index) {
-    if (location.id) {
-      return location.id;
-    }
-
-    return [
-      location.city,
-      location.country,
-      location.latitude,
-      location.longitude,
-      index,
-    ].join("-");
+    setShowCancelConfirm(false);
   }
 
   return (
-    <div className="trip-destination-search">
-      <label className="trip-field-label">{label}</label>
+    <div className="dashboard-panel pro-features-panel">
+      <div className="pro-features-heading">
+        <div className="pro-features-icon">
+          <Crown size={20} />
+        </div>
 
-      <div className="trip-destination-search-wrapper">
-        <input
-          type="text"
-          value={query}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={placeholder}
-          autoComplete="off"
-          disabled={disabled}
-          className="trip-destination-input"
-        />
+        <div>
+          <span className="pro-features-label">TRIPWISE PRO</span>
 
-        {loading && (
-          <span className="trip-destination-loading">Searching...</span>
-        )}
-
-        {open && (
-          <div className="trip-destination-suggestions">
-            {error && (
-              <div className="trip-destination-message trip-destination-error">
-                {error}
-              </div>
-            )}
-
-            {!error && !loading && searched && suggestions.length === 0 && (
-              <div className="trip-destination-message">
-                No destinations found.
-              </div>
-            )}
-
-            {!error &&
-              suggestions.map((location, index) => (
-                <button
-                  key={getSuggestionKey(location, index)}
-                  type="button"
-                  className="trip-destination-suggestion"
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                  }}
-                  onClick={() => handleSelect(location)}
-                >
-                  <div className="trip-destination-suggestion-main">
-                    <strong>{location.city}</strong>
-
-                    <span>
-                      {location.region
-                        ? `${location.region}, ${location.country}`
-                        : location.country}
-                    </span>
-                  </div>
-
-                  <small>
-                    {Number(location.latitude).toFixed(4)},{" "}
-                    {Number(location.longitude).toFixed(4)}
-                  </small>
-                </button>
-              ))}
-          </div>
-        )}
+          <h2>
+            {isPro
+              ? "Your Pro features are unlocked."
+              : "Travel with fewer limits."}
+          </h2>
+        </div>
       </div>
 
-      {selectedLocation && (
-        <div className="trip-selected-destination">
-          <div>
-            <strong>{selectedLocation.locationName}</strong>
+      <div className="pro-features-list">
+        {features.map((feature) => (
+          <div className="pro-feature-item" key={feature.text}>
+            <span className="pro-feature-icon">{feature.icon}</span>
 
-            <span>{selectedLocation.timezone || "Timezone unavailable"}</span>
+            <span>{feature.text}</span>
           </div>
+        ))}
+      </div>
 
-          <small>
-            {Number(selectedLocation.latitude).toFixed(4)},{" "}
-            {Number(selectedLocation.longitude).toFixed(4)}
-          </small>
+      {error && <p className="pro-payment-error">{error}</p>}
+
+      {message && <p className="pro-cancel-success">{message}</p>}
+
+      {isPro ? (
+        <div className="pro-active-actions">
+          <button className="pro-upgrade-button" type="button" disabled>
+            <Crown size={17} />
+            Pro Active
+          </button>
+
+          {cancelAtPeriodEnd ? (
+            <>
+              <div className="pro-cancellation-status">
+                Subscription cancellation scheduled. Your Pro access remains
+                active until the end of the current billing period.
+              </div>
+
+              <button
+                type="button"
+                className="pro-reactivate-button"
+                onClick={handleReactivateSubscription}
+                disabled={reactivateLoading}
+              >
+                <RotateCcw size={16} />
+
+                {reactivateLoading ? "Reactivating..." : "Keep Pro"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="pro-cancel-button"
+              onClick={handleOpenCancelModal}
+            >
+              Cancel subscription
+            </button>
+          )}
+        </div>
+      ) : (
+        <button
+          className="pro-upgrade-button"
+          type="button"
+          onClick={handleUpgrade}
+          disabled={loading}
+        >
+          <Sparkles size={17} />
+
+          {loading ? "Opening checkout..." : "Upgrade to Pro"}
+        </button>
+      )}
+
+      {showCancelConfirm && (
+        <div className="subscription-confirm-overlay">
+          <div className="subscription-confirm-card">
+            <button
+              type="button"
+              className="subscription-confirm-close"
+              onClick={handleCloseCancelModal}
+              disabled={cancelLoading}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="subscription-warning-icon">
+              <AlertTriangle size={24} />
+            </div>
+
+            <h3>Cancel TripWise Pro?</h3>
+
+            <p>
+              Your Pro features will remain active until the end of your current
+              billing period. You will not be charged again after the
+              subscription ends.
+            </p>
+
+            <div className="subscription-confirm-actions">
+              <button
+                type="button"
+                className="subscription-keep-button"
+                onClick={handleCloseCancelModal}
+                disabled={cancelLoading}
+              >
+                Keep Pro
+              </button>
+
+              <button
+                type="button"
+                className="subscription-cancel-confirm-button"
+                onClick={handleCancelSubscription}
+                disabled={cancelLoading}
+              >
+                {cancelLoading ? "Cancelling..." : "Confirm cancellation"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-export default DestinationSearch;
+export default ProFeaturesCard;

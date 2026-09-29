@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate, useParams } from "react-router-dom";
+
 import { ArrowLeft } from "lucide-react";
 
 import TripMap from "../components/trips/TripMap";
@@ -73,44 +75,66 @@ function TripDetailsPage() {
 
   const [deleting, setDeleting] = useState(false);
 
-  async function loadTrip() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getTrip(tripId);
-
-      setTrip(data);
-    } catch (err) {
-      if (err.status === 401) {
-        navigate("/login", {
-          replace: true,
-        });
-
-        return;
-      }
-
-      if (err.status === 403) {
-        setError("Trip Planner is available to TripWise Pro users only.");
-
-        return;
-      }
-
-      if (err.status === 404) {
-        setError("This trip could not be found.");
-
-        return;
-      }
-
-      setError(err.message || "Unable to load this trip.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  /* =========================================================
+     LOAD TRIP
+  ========================================================= */
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadTrip() {
+      try {
+        const data = await getTrip(tripId);
+
+        if (cancelled) {
+          return;
+        }
+
+        setTrip(data);
+        setError("");
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        if (err.status === 401) {
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        if (err.status === 403) {
+          setError("Trip Planner is available to TripWise Pro users only.");
+
+          return;
+        }
+
+        if (err.status === 404) {
+          setError("This trip could not be found.");
+
+          return;
+        }
+
+        setError(err.message || "Unable to load this trip.");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
     loadTrip();
-  }, [tripId]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tripId, navigate]);
+
+  /* =========================================================
+     DELETE TRIP
+  ========================================================= */
 
   async function handleDeleteTrip() {
     try {
@@ -129,6 +153,10 @@ function TripDetailsPage() {
       setDeleting(false);
     }
   }
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
@@ -149,6 +177,10 @@ function TripDetailsPage() {
       </div>
     );
   }
+
+  /* =========================================================
+     LOAD ERROR
+  ========================================================= */
 
   if (error && !trip) {
     return (
@@ -180,9 +212,15 @@ function TripDetailsPage() {
 
   const status = getTripStatus(trip);
 
+  /* =========================================================
+     PAGE
+  ========================================================= */
+
   return (
     <div className="trip-details-page">
       <div className="trip-details-container">
+        {/* TOP BAR */}
+
         <div className="trip-details-topbar">
           <button
             type="button"
@@ -210,7 +248,12 @@ function TripDetailsPage() {
             </button>
           </div>
         </div>
+
+        {/* ERROR */}
+
         {error && <div className="trip-page-error">{error}</div>}
+
+        {/* HERO */}
 
         <section className="trip-details-hero">
           <div className="trip-details-hero-content">
@@ -257,6 +300,8 @@ function TripDetailsPage() {
             </div>
           </div>
         </section>
+
+        {/* ITINERARY */}
 
         <section className="trip-details-section">
           <div className="trip-details-section-heading">
@@ -332,6 +377,7 @@ function TripDetailsPage() {
                       <strong>{Number(stop.longitude).toFixed(4)}</strong>
                     </span>
                   </div>
+
                   <DestinationWeather
                     city={stop.city}
                     country={stop.country}
@@ -343,6 +389,8 @@ function TripDetailsPage() {
             ))}
           </div>
         </section>
+
+        {/* MAP */}
 
         <section className="trip-details-section trip-map-section">
           <div className="trip-details-section-heading">
@@ -360,6 +408,8 @@ function TripDetailsPage() {
 
           <TripMap stops={trip.stops || []} />
         </section>
+
+        {/* DELETE CONFIRMATION */}
 
         {showDeleteConfirm && (
           <div className="trip-delete-overlay">

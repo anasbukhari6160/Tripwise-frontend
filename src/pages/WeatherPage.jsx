@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -75,11 +76,19 @@ function getLocationLabel(location) {
 function WeatherPage() {
   const navigate = useNavigate();
 
+  /* =========================================================
+     WEATHER STATE
+  ========================================================= */
+
   const [weather, setWeather] = useState(null);
 
   const [loadingWeather, setLoadingWeather] = useState(true);
 
   const [weatherError, setWeatherError] = useState("");
+
+  /* =========================================================
+     SEARCH STATE
+  ========================================================= */
 
   const [query, setQuery] = useState("");
 
@@ -93,42 +102,63 @@ function WeatherPage() {
 
   const locationSearchRequestRef = useRef(0);
 
+  /* =========================================================
+     DEFAULT WEATHER
+  ========================================================= */
+
   useEffect(() => {
+    let cancelled = false;
+
     async function loadDefaultWeather() {
       try {
-        setLoadingWeather(true);
-        setWeatherError("");
-
         const weatherData = await getWeather("Lahore");
+
+        if (cancelled) {
+          return;
+        }
 
         setWeather(weatherData);
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
         console.error("Default weather error:", error);
 
         setWeatherError(error.message || "Weather information is unavailable.");
       } finally {
-        setLoadingWeather(false);
+        if (!cancelled) {
+          setLoadingWeather(false);
+        }
       }
     }
 
     loadDefaultWeather();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  /* =========================================================
+     LOCATION SUGGESTIONS
+  ========================================================= */
 
   useEffect(() => {
     const cleanQuery = query.trim();
+
     const requestId = ++locationSearchRequestRef.current;
 
+    /*
+     * No synchronous setState here.
+     * Query-change handlers already clear
+     * old suggestions when required.
+     */
     if (cleanQuery.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-
       return undefined;
     }
 
     if (selectedLocation && query === getLocationLabel(selectedLocation)) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-
       return undefined;
     }
 
@@ -149,6 +179,7 @@ function WeatherPage() {
         const safeResults = Array.isArray(results) ? results : [];
 
         setSuggestions(safeResults);
+
         setShowSuggestions(safeResults.length > 0);
       } catch (error) {
         if (requestId !== locationSearchRequestRef.current) {
@@ -158,6 +189,7 @@ function WeatherPage() {
         console.error("Location suggestion error:", error);
 
         setSuggestions([]);
+
         setShowSuggestions(false);
       } finally {
         if (requestId === locationSearchRequestRef.current) {
@@ -171,22 +203,30 @@ function WeatherPage() {
     };
   }, [query, selectedLocation]);
 
+  /* =========================================================
+     SEARCH SUBMIT
+  ========================================================= */
+
   async function handleSearch(event) {
     event.preventDefault();
 
     const cleanQuery = query.trim();
 
     locationSearchRequestRef.current += 1;
+
     setSuggestions([]);
+
     setShowSuggestions(false);
 
     if (cleanQuery.length < 2) {
       setWeatherError("Enter at least 2 characters.");
+
       return;
     }
 
     try {
       setSearchingLocations(true);
+
       setWeatherError("");
 
       let location = null;
@@ -195,20 +235,24 @@ function WeatherPage() {
         location = selectedLocation;
       } else {
         const results = await searchLocations(cleanQuery);
+
         const safeResults = Array.isArray(results) ? results : [];
 
         if (safeResults.length === 0) {
           setWeatherError("No matching location found.");
+
           return;
         }
 
         location = safeResults[0];
 
         setSelectedLocation(location);
+
         setQuery(getLocationLabel(location));
       }
 
       setSuggestions([]);
+
       setShowSuggestions(false);
 
       setLoadingWeather(true);
@@ -222,21 +266,30 @@ function WeatherPage() {
       setWeatherError(error.message || "Unable to load weather.");
 
       setSuggestions([]);
+
       setShowSuggestions(false);
     } finally {
       setSearchingLocations(false);
+
       setLoadingWeather(false);
     }
   }
+
+  /* =========================================================
+     SELECT LOCATION
+  ========================================================= */
 
   async function handleSelectLocation(location) {
     locationSearchRequestRef.current += 1;
 
     setSuggestions([]);
+
     setShowSuggestions(false);
 
     setSelectedLocation(location);
+
     setQuery(getLocationLabel(location));
+
     setWeatherError("");
 
     try {
@@ -254,20 +307,33 @@ function WeatherPage() {
     }
   }
 
+  /* =========================================================
+     QUERY CHANGE
+  ========================================================= */
+
   function handleQueryChange(event) {
     locationSearchRequestRef.current += 1;
 
     setQuery(event.target.value);
+
     setSelectedLocation(null);
 
     setSuggestions([]);
+
     setShowSuggestions(false);
+
     setWeatherError("");
   }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <div className="weather-page">
       <div className="weather-page-container">
+        {/* BACK */}
+
         <button
           className="weather-back-button"
           type="button"
@@ -276,6 +342,8 @@ function WeatherPage() {
           <ArrowLeft size={18} />
           Dashboard
         </button>
+
+        {/* HEADING */}
 
         <div className="weather-page-heading">
           <span>TRIPWISE WEATHER</span>
@@ -290,6 +358,8 @@ function WeatherPage() {
 
         <div className="weather-page-content">
           <section className="dashboard-panel weather-panel">
+            {/* PANEL HEADING */}
+
             <div className="panel-heading">
               <div>
                 <span className="panel-label">WEATHER</span>
@@ -297,6 +367,8 @@ function WeatherPage() {
                 <h2>Weather overview</h2>
               </div>
             </div>
+
+            {/* SEARCH */}
 
             <div className="weather-search-wrapper">
               <form className="weather-search" onSubmit={handleSearch}>
@@ -317,6 +389,8 @@ function WeatherPage() {
                   {searchingLocations ? "Searching..." : "Search"}
                 </button>
               </form>
+
+              {/* SUGGESTIONS */}
 
               {showSuggestions && suggestions.length > 0 && (
                 <div className="weather-suggestions">
@@ -350,14 +424,20 @@ function WeatherPage() {
               )}
             </div>
 
+            {/* ERROR */}
+
             {weatherError && (
               <div className="weather-search-error">{weatherError}</div>
             )}
+
+            {/* WEATHER DATA */}
 
             {loadingWeather && !weather ? (
               <div className="weather-state">Loading weather...</div>
             ) : weather ? (
               <>
+                {/* CURRENT */}
+
                 <div className="weather-current">
                   <div>
                     <span>
@@ -373,6 +453,8 @@ function WeatherPage() {
                     {getWeatherIcon(weather.current.condition, 50)}
                   </div>
                 </div>
+
+                {/* DETAILS */}
 
                 <div className="weather-extra-details">
                   <div>
@@ -396,6 +478,8 @@ function WeatherPage() {
                   </div>
                 </div>
 
+                {/* FORECAST */}
+
                 <div className="weather-days">
                   {weather.forecast.map((day) => (
                     <div key={day.date}>
@@ -411,6 +495,8 @@ function WeatherPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* LOCATION NOTE */}
 
                 <p className="weather-location-note">
                   Showing weather for {weather.location.name}

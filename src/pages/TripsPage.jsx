@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import { ArrowLeft } from "lucide-react";
 
 import { getTrips } from "../services/trip.service";
@@ -22,6 +24,7 @@ function formatDate(value) {
 
 function getTripStatus(trip) {
   const today = new Date();
+
   today.setHours(0, 0, 0, 0);
 
   const startDate = new Date(`${trip.startDate.slice(0, 10)}T00:00:00`);
@@ -43,14 +46,79 @@ function TripsPage() {
   const navigate = useNavigate();
 
   const [trips, setTrips] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
+
   const [proLocked, setProLocked] = useState(false);
+
+  /* =========================================================
+     INITIAL LOAD
+  ========================================================= */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialTrips() {
+      try {
+        const data = await getTrips();
+
+        if (cancelled) {
+          return;
+        }
+
+        setTrips(data);
+
+        setError("");
+
+        setProLocked(false);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        if (err.status === 401) {
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        if (err.status === 403) {
+          setProLocked(true);
+
+          setTrips([]);
+
+          return;
+        }
+
+        setError(err.message || "Unable to load your trips.");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialTrips();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  /* =========================================================
+     RETRY LOAD
+  ========================================================= */
 
   async function loadTrips() {
     try {
       setLoading(true);
+
       setError("");
+
       setProLocked(false);
 
       const data = await getTrips();
@@ -67,7 +135,9 @@ function TripsPage() {
 
       if (err.status === 403) {
         setProLocked(true);
+
         setTrips([]);
+
         return;
       }
 
@@ -77,9 +147,9 @@ function TripsPage() {
     }
   }
 
-  useEffect(() => {
-    loadTrips();
-  }, []);
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
@@ -91,6 +161,7 @@ function TripsPage() {
             onClick={() => navigate("/dashboard")}
           >
             <ArrowLeft size={20} />
+
             <span>Dashboard</span>
           </button>
 
@@ -99,6 +170,10 @@ function TripsPage() {
       </div>
     );
   }
+
+  /* =========================================================
+     PRO LOCK
+  ========================================================= */
 
   if (proLocked) {
     return (
@@ -110,6 +185,7 @@ function TripsPage() {
             onClick={() => navigate("/dashboard")}
           >
             <ArrowLeft size={20} />
+
             <span>Dashboard</span>
           </button>
 
@@ -132,6 +208,10 @@ function TripsPage() {
     );
   }
 
+  /* =========================================================
+     PAGE
+  ========================================================= */
+
   return (
     <div className="trips-page">
       <div className="trips-page-container">
@@ -141,8 +221,11 @@ function TripsPage() {
           onClick={() => navigate("/dashboard")}
         >
           <ArrowLeft size={20} />
+
           <span>Dashboard</span>
         </button>
+
+        {/* HEADER */}
 
         <div className="trips-page-heading">
           <div>
@@ -162,6 +245,8 @@ function TripsPage() {
           </button>
         </div>
 
+        {/* ERROR */}
+
         {error && (
           <div className="trip-page-error">
             <span>{error}</span>
@@ -171,6 +256,8 @@ function TripsPage() {
             </button>
           </div>
         )}
+
+        {/* EMPTY STATE */}
 
         {!error && trips.length === 0 && (
           <div className="trips-empty-state">
@@ -192,6 +279,8 @@ function TripsPage() {
             </button>
           </div>
         )}
+
+        {/* TRIPS */}
 
         {!error && trips.length > 0 && (
           <div className="trips-list">

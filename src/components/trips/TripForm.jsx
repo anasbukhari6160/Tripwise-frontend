@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
 import TripStopForm from "./TripStopForm";
 
@@ -31,10 +31,12 @@ function normalizeInitialTrip(initialTrip) {
     startDate: initialTrip.startDate || "",
     endDate: initialTrip.endDate || "",
     notes: initialTrip.notes || "",
+
     stops:
       initialTrip.stops?.length > 0
         ? initialTrip.stops.map((stop) => ({
             clientId: createClientId(),
+
             location: {
               id: stop.id,
               locationName: stop.locationName,
@@ -46,6 +48,7 @@ function normalizeInitialTrip(initialTrip) {
               timezone: stop.timezone,
               region: stop.region || null,
             },
+
             arrivalDate: stop.arrivalDate || "",
             departureDate: stop.departureDate || "",
           }))
@@ -53,25 +56,19 @@ function normalizeInitialTrip(initialTrip) {
   };
 }
 
-function TripForm({
+function TripFormContent({
   initialTrip = null,
   onSubmit,
   submitting = false,
   submitLabel = "Create Trip",
 }) {
- const initialState = useMemo(
-   () => normalizeInitialTrip(initialTrip),
-   [initialTrip],
- );
+  const [form, setForm] = useState(() => normalizeInitialTrip(initialTrip));
 
- const [form, setForm] = useState(initialState);
+  const [error, setError] = useState("");
 
- const [error, setError] = useState("");
-
- useEffect(() => {
-   setForm(initialState);
-   setError("");
- }, [initialState]);
+  /* =========================================================
+     FIELD CHANGE
+  ========================================================= */
 
   function handleFieldChange(event) {
     const { name, value } = event.target;
@@ -84,11 +81,16 @@ function TripForm({
     }));
   }
 
+  /* =========================================================
+     STOP CHANGE
+  ========================================================= */
+
   function handleStopChange(index, changes) {
     setError("");
 
     setForm((previous) => ({
       ...previous,
+
       stops: previous.stops.map((stop, stopIndex) =>
         stopIndex === index
           ? {
@@ -100,6 +102,10 @@ function TripForm({
     }));
   }
 
+  /* =========================================================
+     ADD STOP
+  ========================================================= */
+
   function addStop() {
     setError("");
 
@@ -110,10 +116,15 @@ function TripForm({
 
       return {
         ...previous,
+
         stops: [...previous.stops, createEmptyStop()],
       };
     });
   }
+
+  /* =========================================================
+     REMOVE STOP
+  ========================================================= */
 
   function removeStop(index) {
     setError("");
@@ -125,10 +136,15 @@ function TripForm({
 
       return {
         ...previous,
+
         stops: previous.stops.filter((_, stopIndex) => stopIndex !== index),
       };
     });
   }
+
+  /* =========================================================
+     MOVE STOP UP
+  ========================================================= */
 
   function moveStopUp(index) {
     if (index <= 0) {
@@ -147,6 +163,10 @@ function TripForm({
     });
   }
 
+  /* =========================================================
+     MOVE STOP DOWN
+  ========================================================= */
+
   function moveStopDown(index) {
     setForm((previous) => {
       if (index >= previous.stops.length - 1) {
@@ -163,6 +183,10 @@ function TripForm({
       };
     });
   }
+
+  /* =========================================================
+     VALIDATION
+  ========================================================= */
 
   function validateForm() {
     const title = form.title.trim();
@@ -203,19 +227,27 @@ function TripForm({
       }
 
       if (stop.arrivalDate && stop.arrivalDate < form.startDate) {
-        return `Destination ${index + 1} arrival date cannot be before the trip start date.`;
+        return `Destination ${
+          index + 1
+        } arrival date cannot be before the trip start date.`;
       }
 
       if (stop.arrivalDate && stop.arrivalDate > form.endDate) {
-        return `Destination ${index + 1} arrival date cannot be after the trip end date.`;
+        return `Destination ${
+          index + 1
+        } arrival date cannot be after the trip end date.`;
       }
 
       if (stop.departureDate && stop.departureDate < form.startDate) {
-        return `Destination ${index + 1} departure date cannot be before the trip start date.`;
+        return `Destination ${
+          index + 1
+        } departure date cannot be before the trip start date.`;
       }
 
       if (stop.departureDate && stop.departureDate > form.endDate) {
-        return `Destination ${index + 1} departure date cannot be after the trip end date.`;
+        return `Destination ${
+          index + 1
+        } departure date cannot be after the trip end date.`;
       }
 
       if (
@@ -223,7 +255,9 @@ function TripForm({
         stop.departureDate &&
         stop.departureDate < stop.arrivalDate
       ) {
-        return `Destination ${index + 1} departure date cannot be before arrival date.`;
+        return `Destination ${
+          index + 1
+        } departure date cannot be before arrival date.`;
       }
     }
 
@@ -238,32 +272,54 @@ function TripForm({
       const currentStart = currentStop.arrivalDate || currentStop.departureDate;
 
       if (previousEnd && currentStart && currentStart < previousEnd) {
-        return `Destination ${index + 1} cannot start before destination ${index} ends.`;
+        return `Destination ${
+          index + 1
+        } cannot start before destination ${index} ends.`;
       }
     }
 
     return "";
   }
 
+  /* =========================================================
+     BUILD PAYLOAD
+  ========================================================= */
+
   function buildPayload() {
     return {
       title: form.title.trim(),
+
       startDate: form.startDate,
+
       endDate: form.endDate,
+
       notes: form.notes.trim(),
+
       stops: form.stops.map((stop) => ({
         locationName: stop.location.locationName,
+
         city: stop.location.city,
+
         country: stop.location.country,
+
         countryCode: stop.location.countryCode || null,
+
         latitude: Number(stop.location.latitude),
+
         longitude: Number(stop.location.longitude),
+
         timezone: stop.location.timezone || null,
+
         arrivalDate: stop.arrivalDate || null,
+
         departureDate: stop.departureDate || null,
       })),
     };
   }
+
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -274,6 +330,7 @@ function TripForm({
 
     if (validationError) {
       setError(validationError);
+
       return;
     }
 
@@ -284,8 +341,16 @@ function TripForm({
     }
   }
 
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
     <form className="trip-form" onSubmit={handleSubmit}>
+      {/* =====================================================
+          TRIP DETAILS
+      ===================================================== */}
+
       <section className="trip-form-section">
         <div className="trip-form-section-heading">
           <div>
@@ -298,6 +363,8 @@ function TripForm({
         </div>
 
         <div className="trip-form-grid">
+          {/* TITLE */}
+
           <div className="trip-form-group trip-form-group-full">
             <label htmlFor="trip-title">Trip title</label>
 
@@ -313,6 +380,8 @@ function TripForm({
             />
           </div>
 
+          {/* START DATE */}
+
           <div className="trip-form-group">
             <label htmlFor="trip-start-date">Start date</label>
 
@@ -325,6 +394,8 @@ function TripForm({
               disabled={submitting}
             />
           </div>
+
+          {/* END DATE */}
 
           <div className="trip-form-group">
             <label htmlFor="trip-end-date">End date</label>
@@ -339,6 +410,8 @@ function TripForm({
               disabled={submitting}
             />
           </div>
+
+          {/* NOTES */}
 
           <div className="trip-form-group trip-form-group-full">
             <label htmlFor="trip-notes">Notes</label>
@@ -355,11 +428,16 @@ function TripForm({
             />
 
             <small className="trip-character-count">
-              {form.notes.length}/2000
+              {form.notes.length}
+              /2000
             </small>
           </div>
         </div>
       </section>
+
+      {/* =====================================================
+          ITINERARY
+      ===================================================== */}
 
       <section className="trip-form-section">
         <div className="trip-form-section-heading trip-form-itinerary-heading">
@@ -371,7 +449,10 @@ function TripForm({
             <p>Add up to 10 destinations in travel order.</p>
           </div>
 
-          <strong>{form.stops.length}/10</strong>
+          <strong>
+            {form.stops.length}
+            /10
+          </strong>
         </div>
 
         <div className="trip-stop-list">
@@ -402,7 +483,11 @@ function TripForm({
         </button>
       </section>
 
+      {/* ERROR */}
+
       {error && <div className="trip-form-error">{error}</div>}
+
+      {/* SUBMIT */}
 
       <div className="trip-form-actions">
         <button
@@ -415,6 +500,23 @@ function TripForm({
       </div>
     </form>
   );
+}
+
+/* =========================================================
+   WRAPPER
+
+   Changing the trip key remounts TripFormContent so that
+   edit mode receives a fresh state without synchronously
+   calling setState from useEffect.
+========================================================= */
+
+function TripForm(props) {
+  const initialTrip = props.initialTrip;
+
+  const formKey =
+    initialTrip?.id ?? (initialTrip ? JSON.stringify(initialTrip) : "new-trip");
+
+  return <TripFormContent key={formKey} {...props} />;
 }
 
 export default TripForm;
