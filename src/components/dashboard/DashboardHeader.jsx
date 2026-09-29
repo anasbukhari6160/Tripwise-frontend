@@ -49,11 +49,31 @@ function getNotificationKey(trip) {
   ].join("|");
 }
 
+function readStoredNotificationKeys(storageKey) {
+  try {
+    const storedValue = localStorage.getItem(storageKey);
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    return Array.isArray(parsedValue) ? parsedValue : [];
+  } catch (error) {
+    console.error("Unable to load notification state:", error);
+
+    return [];
+  }
+}
+
 function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
   const navigate = useNavigate();
 
   const searchRef = useRef(null);
+
   const notificationRef = useRef(null);
+
   const profileRef = useRef(null);
 
   const [query, setQuery] = useState("");
@@ -66,21 +86,37 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
 
   const [signingOut, setSigningOut] = useState(false);
 
+  /* =========================================================
+     USER-SPECIFIC STORAGE
+  ========================================================= */
+
+  const userStorageId = user?.id || user?.email || "guest";
+
+  const seenStorageKey = `tripwise-seen-notifications-${userStorageId}`;
+
+  const readStorageKey = `tripwise-read-notifications-${userStorageId}`;
+
   /*
    * SEEN:
    * Controls the green dot.
-   * Opening the notification panel marks notifications as seen.
+   * Opening notifications marks
+   * current notifications as seen.
    */
-  const [seenNotificationKeys, setSeenNotificationKeys] = useState([]);
+
+  const [seenNotificationKeys, setSeenNotificationKeys] = useState(() =>
+    readStoredNotificationKeys(seenStorageKey),
+  );
 
   /*
    * READ:
    * Controls the number badge.
-   * Clicking a notification marks that specific notification as read.
+   * Opening an individual trip
+   * marks that notification as read.
    */
-  const [readNotificationKeys, setReadNotificationKeys] = useState([]);
 
-  const [notificationStateLoaded, setNotificationStateLoaded] = useState(false);
+  const [readNotificationKeys, setReadNotificationKeys] = useState(() =>
+    readStoredNotificationKeys(readStorageKey),
+  );
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -113,10 +149,14 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
       .slice(0, 5)
       .map((trip) => ({
         id: `trip-${trip.id}`,
+
         type: "trip",
+
         title: trip.title || "Untitled Trip",
+
         subtitle:
           trip.stops?.[0]?.city || trip.stops?.[0]?.locationName || "Trip",
+
         tripId: trip.id,
       }));
 
@@ -138,12 +178,15 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
       .slice(0, 5)
       .map((destination, index) => ({
         id: `saved-${destination.id || index}`,
+
         type: "saved",
+
         title:
           destination.name ||
           destination.locationName ||
           destination.city ||
           "Saved Destination",
+
         subtitle: [destination.city, destination.country]
           .filter(Boolean)
           .join(", "),
@@ -187,73 +230,22 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
   );
 
   /* =========================================================
-     USER-SPECIFIC STORAGE
-  ========================================================= */
-
-  const userStorageId = user?.id || user?.email || "guest";
-
-  const seenStorageKey = `tripwise-seen-notifications-${userStorageId}`;
-
-  const readStorageKey = `tripwise-read-notifications-${userStorageId}`;
-
-  /* =========================================================
-     LOAD SAVED NOTIFICATION STATE
-  ========================================================= */
-
-  useEffect(() => {
-    setNotificationStateLoaded(false);
-
-    try {
-      const storedSeen = localStorage.getItem(seenStorageKey);
-
-      const storedRead = localStorage.getItem(readStorageKey);
-
-      if (storedSeen) {
-        const parsedSeen = JSON.parse(storedSeen);
-
-        setSeenNotificationKeys(Array.isArray(parsedSeen) ? parsedSeen : []);
-      } else {
-        setSeenNotificationKeys([]);
-      }
-
-      if (storedRead) {
-        const parsedRead = JSON.parse(storedRead);
-
-        setReadNotificationKeys(Array.isArray(parsedRead) ? parsedRead : []);
-      } else {
-        setReadNotificationKeys([]);
-      }
-    } catch (error) {
-      console.error("Unable to load notification state:", error);
-
-      setSeenNotificationKeys([]);
-      setReadNotificationKeys([]);
-    } finally {
-      setNotificationStateLoaded(true);
-    }
-  }, [seenStorageKey, readStorageKey]);
-
-  /* =========================================================
      UNSEEN / UNREAD CALCULATIONS
   ========================================================= */
 
-  const unseenNotificationCount = useMemo(() => {
-    if (!notificationStateLoaded) {
-      return 0;
-    }
+  const unseenNotificationCount = useMemo(
+    () =>
+      notificationKeys.filter((key) => !seenNotificationKeys.includes(key))
+        .length,
+    [notificationKeys, seenNotificationKeys],
+  );
 
-    return notificationKeys.filter((key) => !seenNotificationKeys.includes(key))
-      .length;
-  }, [notificationKeys, seenNotificationKeys, notificationStateLoaded]);
-
-  const unreadNotificationCount = useMemo(() => {
-    if (!notificationStateLoaded) {
-      return 0;
-    }
-
-    return notificationKeys.filter((key) => !readNotificationKeys.includes(key))
-      .length;
-  }, [notificationKeys, readNotificationKeys, notificationStateLoaded]);
+  const unreadNotificationCount = useMemo(
+    () =>
+      notificationKeys.filter((key) => !readNotificationKeys.includes(key))
+        .length,
+    [notificationKeys, readNotificationKeys],
+  );
 
   const hasUnseenNotifications = unseenNotificationCount > 0;
 
@@ -389,14 +381,17 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
       const willOpen = !previous;
 
       /*
-       * Opening the panel means notifications
-       * have been SEEN.
+       * Opening the panel means
+       * notifications have been
+       * SEEN.
        *
        * Green dot disappears.
        *
-       * They are NOT read until the user
-       * clicks the actual trip.
+       * Notifications are not read
+       * until the user opens the
+       * notification/trip.
        */
+
       if (willOpen) {
         markNotificationsAsSeen();
       }
@@ -427,12 +422,17 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     navigate(path);
   }
 
+  /* =========================================================
+     SIGN OUT
+  ========================================================= */
+
   async function handleSignOut() {
     try {
       setSigningOut(true);
 
       const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
+
         credentials: "include",
       });
 
@@ -451,6 +451,10 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
       setShowProfileMenu(false);
     }
   }
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <header className="dashboard-header">
@@ -578,11 +582,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
                           isRead ? "read" : "unread"
                         }`}
                         onClick={() => {
-                          /*
-                           * Clicking THIS trip marks
-                           * only this notification
-                           * as read.
-                           */
                           markNotificationAsRead(trip);
 
                           setShowNotifications(false);
@@ -615,12 +614,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
                     type="button"
                     className="dashboard-dropdown-footer-button"
                     onClick={() => {
-                      /*
-                       * Since the user is opening
-                       * the complete trips list,
-                       * mark visible notifications
-                       * as read.
-                       */
                       markAllNotificationsAsRead();
 
                       setShowNotifications(false);

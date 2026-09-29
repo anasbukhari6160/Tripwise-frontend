@@ -40,6 +40,7 @@ function getLocationLabel(location) {
 
 function createLocationPreview(location) {
   const latitude = Number(location?.latitude);
+
   const longitude = Number(location?.longitude);
 
   return {
@@ -59,12 +60,12 @@ function SavedPage() {
 
   /*
    * Used to invalidate older autocomplete requests.
-   *
-   * This prevents an old request from reopening
-   * the suggestions after the user has already
-   * pressed Search or selected a destination.
    */
   const suggestionRequestRef = useRef(0);
+
+  /* =========================================================
+     SAVED DESTINATIONS STATE
+  ========================================================= */
 
   const [destinations, setDestinations] = useState([]);
 
@@ -73,6 +74,10 @@ function SavedPage() {
   const [limit, setLimit] = useState(1);
 
   const [canSaveMore, setCanSaveMore] = useState(true);
+
+  /* =========================================================
+     SEARCH STATE
+  ========================================================= */
 
   const [city, setCity] = useState("");
 
@@ -83,6 +88,10 @@ function SavedPage() {
   const [locationPreview, setLocationPreview] = useState(null);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  /* =========================================================
+     UI STATE
+  ========================================================= */
 
   const [loading, setLoading] = useState(true);
 
@@ -97,7 +106,9 @@ function SavedPage() {
   const [message, setMessage] = useState("");
 
   /* =========================================================
-     LOAD SAVED DESTINATIONS
+     RELOAD DESTINATIONS
+
+     Used after save/delete actions.
   ========================================================= */
 
   async function loadDestinations() {
@@ -115,14 +126,52 @@ function SavedPage() {
 
       setCanSaveMore(data.canSaveMore);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(requestError.message || "Unable to load saved destinations.");
     } finally {
       setLoading(false);
     }
   }
 
+  /* =========================================================
+     INITIAL LOAD
+  ========================================================= */
+
   useEffect(() => {
-    loadDestinations();
+    let cancelled = false;
+
+    async function loadInitialDestinations() {
+      try {
+        const data = await getSavedDestinations();
+
+        if (cancelled) {
+          return;
+        }
+
+        setDestinations(data.destinations || []);
+
+        setPlan(data.plan || "free");
+
+        setLimit(data.limit);
+
+        setCanSaveMore(data.canSaveMore);
+      } catch (requestError) {
+        if (cancelled) {
+          return;
+        }
+
+        setError(requestError.message || "Unable to load saved destinations.");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialDestinations();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /* =========================================================
@@ -133,40 +182,21 @@ function SavedPage() {
     const query = city.trim();
 
     /*
-     * Not enough characters.
+     * The input change handler already clears
+     * stale suggestions when query is too short.
      */
     if (query.length < 2) {
-      suggestionRequestRef.current += 1;
-
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setSearching(false);
-
-      return;
+      return undefined;
     }
 
     /*
-     * A location has already been selected.
-     *
-     * Do not perform another autocomplete
-     * request for its completed label.
+     * If a location has already been selected,
+     * don't search again for its completed label.
      */
     if (selectedLocation && city === getLocationLabel(selectedLocation)) {
-      suggestionRequestRef.current += 1;
-
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setSearching(false);
-
-      return;
+      return undefined;
     }
 
-    /*
-     * Every search request gets an ID.
-     *
-     * Only the latest request is allowed
-     * to update the recommendation list.
-     */
     const requestId = suggestionRequestRef.current + 1;
 
     suggestionRequestRef.current = requestId;
@@ -184,7 +214,7 @@ function SavedPage() {
           return;
         }
 
-        const safeResults = results || [];
+        const safeResults = Array.isArray(results) ? results : [];
 
         setSuggestions(safeResults);
 
@@ -197,6 +227,7 @@ function SavedPage() {
         console.error("Location suggestion error:", searchError);
 
         setSuggestions([]);
+
         setShowSuggestions(false);
       } finally {
         if (suggestionRequestRef.current === requestId) {
@@ -205,7 +236,9 @@ function SavedPage() {
       }
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [city, selectedLocation]);
 
   /* =========================================================
@@ -222,10 +255,14 @@ function SavedPage() {
       !Number.isFinite(preview.longitude)
     ) {
       setSelectedLocation(null);
+
       setLocationPreview(null);
 
       setSuggestions([]);
+
       setShowSuggestions(false);
+
+      setSearching(false);
 
       setError(
         "The selected destination does not contain valid location data.",
@@ -235,8 +272,8 @@ function SavedPage() {
     }
 
     /*
-     * Invalidate autocomplete requests that
-     * may still be running.
+     * Invalidate any autocomplete request
+     * that may still be running.
      */
     suggestionRequestRef.current += 1;
 
@@ -247,11 +284,13 @@ function SavedPage() {
     setCity(getLocationLabel(location));
 
     setSuggestions([]);
+
     setShowSuggestions(false);
 
     setSearching(false);
 
     setError("");
+
     setMessage("");
   }
 
@@ -260,7 +299,7 @@ function SavedPage() {
   }
 
   /* =========================================================
-     EXPLICIT SEARCH BUTTON
+     EXPLICIT SEARCH
   ========================================================= */
 
   async function handleSearch(event) {
@@ -269,15 +308,18 @@ function SavedPage() {
     const cleanQuery = city.trim();
 
     setError("");
+
     setMessage("");
 
     if (cleanQuery.length < 2) {
       suggestionRequestRef.current += 1;
 
       setSelectedLocation(null);
+
       setLocationPreview(null);
 
       setSuggestions([]);
+
       setShowSuggestions(false);
 
       setSearching(false);
@@ -288,19 +330,15 @@ function SavedPage() {
     }
 
     /*
-     * Important bug fix:
-     *
-     * invalidate the predictive autocomplete request
-     * before running the explicit Search request.
-     *
-     * This stops an older autocomplete response from
-     * reopening the recommendations afterwards.
+     * Invalidate predictive autocomplete
+     * before explicit search.
      */
     const requestId = suggestionRequestRef.current + 1;
 
     suggestionRequestRef.current = requestId;
 
     setSuggestions([]);
+
     setShowSuggestions(false);
 
     try {
@@ -309,18 +347,22 @@ function SavedPage() {
       const results = await searchLocations(cleanQuery);
 
       /*
-       * The user may have changed the input
-       * while Search was still running.
+       * User may have changed input
+       * while request was running.
        */
       if (suggestionRequestRef.current !== requestId) {
         return;
       }
 
-      if (!results || results.length === 0) {
+      const safeResults = Array.isArray(results) ? results : [];
+
+      if (safeResults.length === 0) {
         setSelectedLocation(null);
+
         setLocationPreview(null);
 
         setSuggestions([]);
+
         setShowSuggestions(false);
 
         setError("No matching destination found.");
@@ -328,11 +370,7 @@ function SavedPage() {
         return;
       }
 
-      /*
-       * Search button chooses the highest-ranked
-       * matching destination.
-       */
-      const bestMatch = results[0];
+      const bestMatch = safeResults[0];
 
       selectLocation(bestMatch);
     } catch (searchError) {
@@ -343,17 +381,19 @@ function SavedPage() {
       console.error("Saved destination search error:", searchError);
 
       setSelectedLocation(null);
+
       setLocationPreview(null);
 
       setSuggestions([]);
+
       setShowSuggestions(false);
 
       setError(searchError.message || "Unable to search destinations.");
     } finally {
       /*
-       * selectLocation() invalidates the current
-       * request itself, so only clear searching
-       * here when this request is still current.
+       * selectLocation() increments the request ref,
+       * so only update searching if this request
+       * is still current.
        */
       if (suggestionRequestRef.current === requestId) {
         setSearching(false);
@@ -367,26 +407,27 @@ function SavedPage() {
 
   function handleCityChange(event) {
     /*
-     * Immediately invalidate any old autocomplete
-     * or explicit search request.
+     * Immediately invalidate any old request.
      */
     suggestionRequestRef.current += 1;
 
     setCity(event.target.value);
 
     setSelectedLocation(null);
+
     setLocationPreview(null);
 
     /*
      * Remove old suggestions immediately.
-     * Fresh ones will appear after the debounce.
      */
     setSuggestions([]);
+
     setShowSuggestions(false);
 
     setSearching(false);
 
     setError("");
+
     setMessage("");
   }
 
@@ -405,6 +446,7 @@ function SavedPage() {
       setSaving(true);
 
       setError("");
+
       setMessage("");
 
       await saveDestination(locationPreview);
@@ -416,14 +458,18 @@ function SavedPage() {
       setCity("");
 
       setSuggestions([]);
+
       setShowSuggestions(false);
 
       setSelectedLocation(null);
+
       setLocationPreview(null);
+
+      setSearching(false);
 
       await loadDestinations();
     } catch (saveError) {
-      setError(saveError.message);
+      setError(saveError.message || "Unable to save destination.");
     } finally {
       setSaving(false);
     }
@@ -446,6 +492,7 @@ function SavedPage() {
       setDeletingId(destination.id);
 
       setError("");
+
       setMessage("");
 
       await deleteSavedDestination(destination.id);
@@ -454,7 +501,7 @@ function SavedPage() {
 
       await loadDestinations();
     } catch (deleteError) {
-      setError(deleteError.message);
+      setError(deleteError.message || "Unable to remove destination.");
     } finally {
       setDeletingId(null);
     }

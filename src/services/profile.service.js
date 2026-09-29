@@ -8,11 +8,12 @@ async function profileRequest(path = "", options = {}) {
 
     headers: {
       "Content-Type": "application/json",
+
       ...(options.headers || {}),
     },
   });
 
-  let data = {};
+  let data;
 
   try {
     data = await response.json();
@@ -24,6 +25,7 @@ async function profileRequest(path = "", options = {}) {
     const error = new Error(data.message || "Profile request failed.");
 
     error.status = response.status;
+
     error.code = data.code || null;
 
     throw error;

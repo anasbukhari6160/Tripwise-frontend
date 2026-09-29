@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -138,9 +138,17 @@ function calculateTripDays(startDate, endDate) {
 function DashboardPage() {
   const navigate = useNavigate();
 
+  /* =========================================================
+     USER
+  ========================================================= */
+
   const [user, setUser] = useState(null);
 
   const [loadingUser, setLoadingUser] = useState(true);
+
+  /* =========================================================
+     WEATHER
+  ========================================================= */
 
   const [weather, setWeather] = useState(null);
 
@@ -160,9 +168,17 @@ function DashboardPage() {
 
   const weatherSearchRequestRef = useRef(0);
 
+  /* =========================================================
+     SAVED DESTINATIONS
+  ========================================================= */
+
   const [savedDestinations, setSavedDestinations] = useState([]);
 
   const [loadingSaved, setLoadingSaved] = useState(true);
+
+  /* =========================================================
+     TRIPS
+  ========================================================= */
 
   const [trips, setTrips] = useState([]);
 
@@ -172,93 +188,168 @@ function DashboardPage() {
 
   const [currentTripPhotoIndex, setCurrentTripPhotoIndex] = useState(0);
 
+  /* =========================================================
+     LOAD USER
+  ========================================================= */
+
   useEffect(() => {
+    let cancelled = false;
+
     async function loadUser() {
       try {
         const data = await getCurrentUser();
 
+        if (cancelled) {
+          return;
+        }
+
         setUser(data.user);
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
         console.error("Unable to load dashboard user:", error);
       } finally {
-        setLoadingUser(false);
+        if (!cancelled) {
+          setLoadingUser(false);
+        }
       }
     }
 
     loadUser();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const loadWeather = useCallback(async (city) => {
-    try {
-      setLoadingWeather(true);
-      setWeatherError("");
+  /* =========================================================
+     LOAD DEFAULT WEATHER
+  ========================================================= */
 
-      const weatherData = await getWeather(city);
+  useEffect(() => {
+    let cancelled = false;
 
-      setWeather(weatherData);
-    } catch (error) {
-      console.error("Unable to load weather:", error);
+    async function loadDefaultWeather() {
+      try {
+        const weatherData = await getWeather("Lahore");
 
-      setWeatherError(error.message || "Weather information is unavailable.");
-    } finally {
-      setLoadingWeather(false);
+        if (cancelled) {
+          return;
+        }
+
+        setWeather(weatherData);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error("Unable to load weather:", error);
+
+        setWeatherError(error.message || "Weather information is unavailable.");
+      } finally {
+        if (!cancelled) {
+          setLoadingWeather(false);
+        }
+      }
     }
+
+    loadDefaultWeather();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    loadWeather("Lahore");
-  }, [loadWeather]);
+  /* =========================================================
+     LOAD SAVED DESTINATIONS
+  ========================================================= */
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadSavedDestinations() {
       try {
-        setLoadingSaved(true);
-
         const data = await getSavedDestinations();
+
+        if (cancelled) {
+          return;
+        }
 
         setSavedDestinations(data.destinations || []);
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
         console.error("Unable to load saved destinations:", error);
 
         setSavedDestinations([]);
       } finally {
-        setLoadingSaved(false);
+        if (!cancelled) {
+          setLoadingSaved(false);
+        }
       }
     }
 
     loadSavedDestinations();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  /* =========================================================
+     LOAD TRIPS
+  ========================================================= */
+
   useEffect(() => {
+    let cancelled = false;
+
     async function loadTrips() {
       try {
-        setLoadingTrips(true);
-
         const data = await getTrips();
+
+        if (cancelled) {
+          return;
+        }
 
         setTrips(data || []);
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
         if (error.status !== 403) {
           console.error("Unable to load dashboard trips:", error);
         }
 
         setTrips([]);
       } finally {
-        setLoadingTrips(false);
+        if (!cancelled) {
+          setLoadingTrips(false);
+        }
       }
     }
 
     loadTrips();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  /* =========================================================
+     WEATHER LOCATION SUGGESTIONS
+  ========================================================= */
 
   useEffect(() => {
     const cleanQuery = weatherQuery.trim();
+
     const requestId = ++weatherSearchRequestRef.current;
 
     if (cleanQuery.length < 2) {
-      setWeatherSuggestions([]);
-      setShowWeatherSuggestions(false);
-
       return undefined;
     }
 
@@ -266,9 +357,6 @@ function DashboardPage() {
       selectedLocation &&
       weatherQuery === getLocationLabel(selectedLocation)
     ) {
-      setWeatherSuggestions([]);
-      setShowWeatherSuggestions(false);
-
       return undefined;
     }
 
@@ -289,6 +377,7 @@ function DashboardPage() {
         const safeResults = Array.isArray(results) ? results : [];
 
         setWeatherSuggestions(safeResults);
+
         setShowWeatherSuggestions(safeResults.length > 0);
       } catch (error) {
         if (requestId !== weatherSearchRequestRef.current) {
@@ -298,6 +387,7 @@ function DashboardPage() {
         console.error("Dashboard location search error:", error);
 
         setWeatherSuggestions([]);
+
         setShowWeatherSuggestions(false);
       } finally {
         if (requestId === weatherSearchRequestRef.current) {
@@ -311,22 +401,30 @@ function DashboardPage() {
     };
   }, [weatherQuery, selectedLocation]);
 
+  /* =========================================================
+     WEATHER SEARCH
+  ========================================================= */
+
   async function handleWeatherSearch(event) {
     event.preventDefault();
 
     const cleanQuery = weatherQuery.trim();
 
     weatherSearchRequestRef.current += 1;
+
     setWeatherSuggestions([]);
+
     setShowWeatherSuggestions(false);
 
     if (cleanQuery.length < 2) {
       setWeatherError("Enter at least 2 characters.");
+
       return;
     }
 
     try {
       setSearchingLocations(true);
+
       setWeatherError("");
 
       let location = null;
@@ -338,20 +436,24 @@ function DashboardPage() {
         location = selectedLocation;
       } else {
         const results = await searchLocations(cleanQuery);
+
         const safeResults = Array.isArray(results) ? results : [];
 
         if (safeResults.length === 0) {
           setWeatherError("No matching location found.");
+
           return;
         }
 
         location = safeResults[0];
 
         setSelectedLocation(location);
+
         setWeatherQuery(getLocationLabel(location));
       }
 
       setWeatherSuggestions([]);
+
       setShowWeatherSuggestions(false);
 
       setLoadingWeather(true);
@@ -365,21 +467,30 @@ function DashboardPage() {
       setWeatherError(error.message || "Unable to load weather.");
 
       setWeatherSuggestions([]);
+
       setShowWeatherSuggestions(false);
     } finally {
       setSearchingLocations(false);
+
       setLoadingWeather(false);
     }
   }
+
+  /* =========================================================
+     SELECT WEATHER LOCATION
+  ========================================================= */
 
   async function handleSelectLocation(location) {
     weatherSearchRequestRef.current += 1;
 
     setWeatherSuggestions([]);
+
     setShowWeatherSuggestions(false);
 
     setSelectedLocation(location);
+
     setWeatherQuery(getLocationLabel(location));
+
     setWeatherError("");
 
     try {
@@ -397,16 +508,27 @@ function DashboardPage() {
     }
   }
 
+  /* =========================================================
+     WEATHER INPUT
+  ========================================================= */
+
   function handleWeatherInputChange(event) {
     weatherSearchRequestRef.current += 1;
 
     setWeatherQuery(event.target.value);
+
     setSelectedLocation(null);
 
     setWeatherSuggestions([]);
+
     setShowWeatherSuggestions(false);
+
     setWeatherError("");
   }
+
+  /* =========================================================
+     UPCOMING TRIPS
+  ========================================================= */
 
   const todayDateKey = getTodayDateKey();
 
@@ -444,20 +566,19 @@ function DashboardPage() {
 
   const nextTripFirstStop = nextTrip?.stops?.[0] || null;
 
+  /* =========================================================
+     NEXT TRIP PHOTOS
+  ========================================================= */
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadNextTripPhotos() {
       if (!nextTripFirstStop?.city) {
-        setNextTripPhotos([]);
-        setCurrentTripPhotoIndex(0);
         return;
       }
 
       try {
-        setNextTripPhotos([]);
-        setCurrentTripPhotoIndex(0);
-
         const photos = await getDestinationPhotos(
           nextTripFirstStop.city,
           nextTripFirstStop.country,
@@ -472,6 +593,7 @@ function DashboardPage() {
         );
 
         setNextTripPhotos(validPhotos);
+
         setCurrentTripPhotoIndex(0);
 
         validPhotos.forEach((photo) => {
@@ -484,6 +606,7 @@ function DashboardPage() {
 
         if (!cancelled) {
           setNextTripPhotos([]);
+
           setCurrentTripPhotoIndex(0);
         }
       }
@@ -495,6 +618,10 @@ function DashboardPage() {
       cancelled = true;
     };
   }, [nextTripFirstStop?.city, nextTripFirstStop?.country]);
+
+  /* =========================================================
+     PHOTO ROTATION
+  ========================================================= */
 
   useEffect(() => {
     if (nextTripPhotos.length <= 1) {
@@ -518,9 +645,17 @@ function DashboardPage() {
     ? calculateTripDays(nextTrip.startDate, nextTrip.endDate)
     : 0;
 
+  /* =========================================================
+     LOADING
+  ========================================================= */
+
   if (loadingUser) {
     return <div className="dashboard-loading">Loading your dashboard...</div>;
   }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <div className="dashboard-layout">
@@ -532,7 +667,10 @@ function DashboardPage() {
           trips={trips}
           savedDestinations={savedDestinations}
         />
+
         <main className="dashboard-content">
+          {/* WELCOME */}
+
           <section className="dashboard-welcome">
             <div>
               <span className="dashboard-eyebrow">TRAVEL OVERVIEW</span>
@@ -553,6 +691,8 @@ function DashboardPage() {
               Plan a New Trip
             </button>
           </section>
+
+          {/* STATS */}
 
           <section className="dashboard-stats">
             <StatCard
@@ -608,7 +748,11 @@ function DashboardPage() {
             />
           </section>
 
+          {/* MAIN GRID */}
+
           <section className="dashboard-grid">
+            {/* UPCOMING TRIP */}
+
             <div className="dashboard-panel upcoming-trip-panel">
               {nextTrip &&
                 nextTripPhoto &&
@@ -663,6 +807,7 @@ function DashboardPage() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
+
                       navigate(`/trips/${nextTrip.id}`);
                     }
                   }}
@@ -722,6 +867,8 @@ function DashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* WEATHER */}
 
             <div className="dashboard-panel weather-panel">
               <div className="panel-heading">
@@ -860,6 +1007,8 @@ function DashboardPage() {
             </div>
           </section>
 
+          {/* SECONDARY */}
+
           <section className="dashboard-secondary-grid">
             <SavedDestinations
               destinations={savedDestinations}
@@ -868,6 +1017,9 @@ function DashboardPage() {
 
             <QuickPlanner />
           </section>
+
+          {/* PRO */}
+
           <section id="pro-section" className="dashboard-pro-section">
             <ProFeaturesCard user={user} />
           </section>
