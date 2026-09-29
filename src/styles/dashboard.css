@@ -15,21 +15,38 @@
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 20;
+
   width: 250px;
+
   height: 100vh;
-  padding: 28px 20px;
+  height: 100dvh;
+
+  padding: 28px 20px 18px;
+
   box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+
+  overflow: hidden;
+
   background: #080c07;
+
   border-right: 1px solid #20291d;
 }
+/* =========================
+   SIDEBAR CORE
+========================= */
 
 .sidebar-brand {
-  padding: 0 12px 32px;
+  flex-shrink: 0;
+  padding: 0 12px 28px;
+
+  color: #f4f7f1;
+
   font-size: 23px;
   font-weight: 800;
+  line-height: 1;
 }
 
 .sidebar-brand span {
@@ -43,15 +60,25 @@
 }
 
 .sidebar-link {
+  width: 100%;
   min-height: 46px;
   padding: 0 13px;
+
+  box-sizing: border-box;
+
   display: flex;
   align-items: center;
   gap: 12px;
+
   border: 1px solid transparent;
   border-radius: 12px;
+
   color: #8d9788;
+
+  font-size: 15px;
+  font-weight: 500;
   text-decoration: none;
+
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
@@ -65,19 +92,24 @@
 
 .sidebar-link.active {
   color: #d7ff55;
+
   background: rgba(202, 255, 51, 0.08);
+
   border-color: rgba(202, 255, 51, 0.17);
 }
 
-.sidebar-bottom {
-  margin-top: auto;
+.sidebar-link svg,
+.sidebar-signout-button svg {
+  flex-shrink: 0;
 }
 
 .sidebar-pro-card {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   padding: 16px;
+
   border: 1px solid #293424;
   border-radius: 16px;
+
   background:
     linear-gradient(
       145deg,
@@ -89,55 +121,172 @@
 .sidebar-pro-icon {
   width: 34px;
   height: 34px;
+
   display: grid;
   place-items: center;
+
   margin-bottom: 13px;
+
   border-radius: 10px;
+
   background: #caff33;
   color: #0b0e09;
 }
 
 .sidebar-pro-card strong {
+  display: block;
+
+  color: #f4f7f1;
+
   font-size: 14px;
+  font-weight: 800;
 }
 
 .sidebar-pro-card p {
   margin: 7px 0 14px;
+
   color: #899285;
+
   font-size: 12px;
   line-height: 1.5;
 }
 
 .sidebar-pro-card button {
   width: 100%;
+  min-height: 42px;
   padding: 10px 12px;
+
   border: none;
   border-radius: 10px;
+
   background: #caff33;
   color: #080b06;
-  font-weight: 700;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+
   cursor: pointer;
+
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
 
-.sidebar-pro-card button:hover:not(:disabled) {
+.sidebar-pro-card button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(202, 255, 51, 0.12);
+
+  box-shadow:
+    0 8px 24px rgba(202, 255, 51, 0.12);
 }
 
-.sidebar-pro-card button:disabled {
-  cursor: default;
-  opacity: 0.9;
+/* =========================
+   SIDEBAR SCROLL AREA
+========================= */
+
+.sidebar-scroll-area {
+  min-height: 0;
+
+  flex: 1;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  padding-right: 5px;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    rgba(202, 255, 51, 0.38)
+    #0a0f08;
 }
 
-.sidebar-pro-error {
-  display: block;
-  margin-top: 10px;
+.sidebar-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll-area::-webkit-scrollbar-track {
+  background: #0a0f08;
+
+  border-radius: 999px;
+}
+
+.sidebar-scroll-area::-webkit-scrollbar-thumb {
+  background:
+    rgba(202, 255, 51, 0.28);
+
+  border-radius: 999px;
+
+  border: 1px solid
+    rgba(202, 255, 51, 0.08);
+}
+
+.sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
+  background:
+    rgba(202, 255, 51, 0.48);
+}
+/* =========================
+   FIXED SIDEBAR BOTTOM
+========================= */
+
+.sidebar-fixed-bottom {
+  flex-shrink: 0;
+
+  padding-top: 10px;
+
+  background: #080c07;
+}
+
+.sidebar-account-actions {
+  padding-top: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  border-top: 1px solid #20291d;
+}
+
+.sidebar-account-actions .sidebar-link {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.sidebar-signout-button {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  border: 1px solid transparent;
+  border-radius: 12px;
+
+  background: transparent;
+  color: #8d9788;
+
+  font-family: inherit;
+  font-size: 15px;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.sidebar-signout-button:hover:not(:disabled) {
+  border-color: rgba(223, 143, 143, 0.16);
+  background: rgba(223, 143, 143, 0.05);
   color: #df8f8f;
-  font-size: 10px;
-  line-height: 1.4;
+}
+
+.sidebar-signout-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .dashboard-main {
@@ -458,6 +607,191 @@
   margin: 0;
   color: #838d7f;
   font-size: 13px;
+}
+
+/* =========================
+   FULL UPCOMING TRIP SLIDESHOW
+========================= */
+
+.upcoming-trip-panel {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  min-height: 430px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.upcoming-trip-background {
+  position: absolute;
+  inset: 0;
+
+  z-index: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  animation:
+    dashboard-trip-photo-fade
+    0.7s ease;
+}
+
+.upcoming-trip-overlay {
+  position: absolute;
+  inset: 0;
+
+  z-index: 1;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 8, 4, 0.62) 0%,
+      rgba(4, 8, 4, 0.28) 35%,
+      rgba(4, 8, 4, 0.78) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(4, 8, 4, 0.72) 0%,
+      rgba(4, 8, 4, 0.24) 72%,
+      rgba(4, 8, 4, 0.16) 100%
+    );
+
+  pointer-events: none;
+}
+
+.upcoming-trip-heading {
+  position: relative;
+  z-index: 3;
+
+  flex-shrink: 0;
+}
+
+.upcoming-trip-heading h2 {
+  color: #ffffff;
+
+  text-shadow:
+    0 2px 14px rgba(0, 0, 0, 0.5);
+}
+
+.upcoming-trip-heading button {
+  position: relative;
+  z-index: 4;
+}
+
+.upcoming-trip-content {
+  position: relative;
+  z-index: 2;
+
+  flex: 1;
+
+  min-height: 300px;
+  margin: 0;
+  padding: 24px;
+
+  align-items: flex-end;
+
+  border: none;
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.upcoming-trip-content:focus-visible {
+  outline: 2px solid #caff33;
+  outline-offset: -4px;
+}
+
+.upcoming-trip-content .trip-placeholder-content {
+  position: relative;
+  z-index: 3;
+}
+
+.upcoming-trip-content .trip-placeholder-content span {
+  color: #caff33;
+  font-weight: 700;
+
+  text-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.72);
+}
+
+.upcoming-trip-content .trip-placeholder-content h3 {
+  color: #ffffff;
+
+  text-shadow:
+    0 3px 18px rgba(0, 0, 0, 0.68);
+}
+
+.upcoming-trip-content .trip-placeholder-content p {
+  color: #d0d8cc;
+
+  text-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.72);
+}
+
+.upcoming-trip-content .trip-days {
+  position: relative;
+  z-index: 3;
+
+  border-color: rgba(202, 255, 51, 0.3);
+
+  background: rgba(5, 10, 5, 0.86);
+
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+.trip-photo-indicators {
+  position: absolute;
+
+  left: 50%;
+  bottom: 15px;
+
+  z-index: 4;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  transform: translateX(-50%);
+
+  pointer-events: none;
+}
+
+.trip-photo-indicators span {
+  width: 6px;
+  height: 6px;
+
+  display: block;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.55);
+
+  transition:
+    width 0.3s ease,
+    background 0.3s ease;
+}
+
+.trip-photo-indicators span.active {
+  width: 20px;
+
+  background: #caff33;
+}
+
+@keyframes dashboard-trip-photo-fade {
+  from {
+    opacity: 0;
+    transform: scale(1.025);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .trip-days {
@@ -1389,6 +1723,16 @@
 }
 
 @media (max-width: 560px) {
+
+  .upcoming-trip-panel {
+    min-height: 360px;
+  }
+
+  .upcoming-trip-content {
+    min-height: 250px;
+    padding: 17px;
+  }
+
   .dashboard-layout {
     overflow-x: hidden;
   }
@@ -1873,4 +2217,1008 @@
     bottom: 10px;
     border-radius: 16px;
   }
+}
+
+  /* =========================
+   SHORT VIEWPORT / ZOOM
+========================= */
+
+@media (
+  min-width: 801px
+) and (
+  max-height: 820px
+) {
+  .dashboard-sidebar {
+    padding:
+      18px
+      16px
+      12px;
+  }
+
+  .sidebar-brand {
+    padding:
+      0
+      10px
+      18px;
+
+    font-size: 21px;
+  }
+
+  .sidebar-nav {
+    gap: 3px;
+  }
+
+  .sidebar-link,
+  .sidebar-signout-button {
+    min-height: 40px;
+  }
+
+  .sidebar-pro-card {
+    margin-bottom: 9px;
+
+    padding: 12px;
+  }
+
+  .sidebar-pro-icon {
+    width: 30px;
+    height: 30px;
+
+    margin-bottom: 8px;
+  }
+
+  .sidebar-pro-card p {
+    margin:
+      5px
+      0
+      9px;
+
+    font-size: 10px;
+  }
+
+  .sidebar-pro-card button {
+    padding:
+      8px
+      10px;
+  }
+
+  .sidebar-fixed-bottom {
+    padding-top: 8px;
+  }
+}
+@media (
+  min-width: 801px
+) and (
+  max-height: 680px
+) {
+  .sidebar-brand {
+    padding-bottom: 10px;
+  }
+
+  .sidebar-link,
+  .sidebar-signout-button {
+    min-height: 36px;
+
+    font-size: 13px;
+  }
+
+  .sidebar-pro-card p {
+    display: none;
+  }
+
+  .sidebar-pro-card {
+    padding: 9px 11px;
+  }
+
+  .sidebar-pro-card button {
+    margin-top: 6px;
+  }
+}
+
+/* =========================
+   GLOBAL TRIPWISE SCROLLBAR
+========================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(202, 255, 51, 0.34) #080c07;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #080c07;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(202, 255, 51, 0.28);
+  border: 2px solid #080c07;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(202, 255, 51, 0.5);
+}
+
+/* =====================================================
+   FINAL DASHBOARD BUTTON STANDARD
+   TripWise standard page/action button size: 114px × 54px
+
+   Intentionally NOT applied to:
+   - sidebar navigation links / Sign Out
+   - header icon buttons
+   - profile menu
+   - mobile navigation
+   - destination menu icon
+   - planner field cards
+   - modal close icon
+===================================================== */
+
+:root {
+  --tw-action-button-width: 114px;
+  --tw-action-button-height: 54px;
+  --tw-action-button-radius: 11px;
+}
+
+/* =========================
+   STANDARD PAGE/ACTION SIZE
+========================= */
+
+.dashboard-primary-button,
+.panel-heading button,
+.weather-search button,
+.quick-planner-button,
+.sidebar-pro-card button,
+.pro-upgrade-button,
+.pro-features-panel .pro-cancel-button,
+.pro-reactivate-button,
+.subscription-keep-button,
+.subscription-cancel-confirm-button {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: var(--tw-action-button-width);
+  min-width: var(--tw-action-button-width);
+  max-width: var(--tw-action-button-width);
+
+  height: var(--tw-action-button-height);
+  min-height: var(--tw-action-button-height);
+  max-height: var(--tw-action-button-height);
+
+  padding: 0 12px;
+
+  flex: 0 0 var(--tw-action-button-width);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  box-sizing: border-box;
+
+  border-radius: var(--tw-action-button-radius);
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.1;
+
+  text-align: center;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* =========================
+   PRIMARY ACTIONS
+========================= */
+
+.dashboard-primary-button,
+.quick-planner-button,
+.sidebar-pro-card button,
+.pro-upgrade-button,
+.subscription-keep-button {
+  border: 1px solid #caff33;
+
+  background: #caff33;
+  color: #080b06;
+}
+
+.dashboard-primary-button:hover:not(:disabled),
+.quick-planner-button:hover:not(:disabled),
+.sidebar-pro-card button:hover:not(:disabled),
+.pro-upgrade-button:hover:not(:disabled),
+.subscription-keep-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 28px rgba(202, 255, 51, 0.14);
+}
+
+/* =========================
+   SECONDARY ACTIONS
+========================= */
+
+.panel-heading button,
+.pro-reactivate-button {
+  border: 1px solid rgba(202, 255, 51, 0.24);
+
+  background: rgba(202, 255, 51, 0.06);
+  color: #caff33;
+}
+
+.panel-heading button:hover:not(:disabled),
+.pro-reactivate-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  border-color: rgba(202, 255, 51, 0.42);
+
+  background: rgba(202, 255, 51, 0.11);
+
+  text-decoration: none;
+}
+
+/* =========================
+   DANGER ACTIONS
+========================= */
+
+.pro-features-panel .pro-cancel-button,
+.subscription-cancel-confirm-button {
+  border: 1px solid rgba(223, 143, 143, 0.28);
+
+  background: rgba(223, 143, 143, 0.07);
+  color: #df8f8f;
+}
+
+.pro-features-panel .pro-cancel-button:hover:not(:disabled),
+.subscription-cancel-confirm-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  border-color: rgba(223, 143, 143, 0.48);
+
+  background: rgba(223, 143, 143, 0.13);
+}
+
+/* =========================
+   WEATHER SEARCH ACTION
+========================= */
+
+.weather-search {
+  min-height: var(--tw-action-button-height);
+}
+
+.weather-search button {
+  align-self: stretch;
+
+  border: none;
+  border-left: 1px solid #263022;
+  border-radius:
+    0
+    var(--tw-action-button-radius)
+    var(--tw-action-button-radius)
+    0;
+
+  background: #caff33;
+  color: #080b06;
+}
+
+.weather-search button:hover:not(:disabled) {
+  background: #d2ff4f;
+}
+
+.weather-search button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================
+   PRO ACTION LAYOUT
+========================= */
+
+.pro-active-actions {
+  align-items: flex-start;
+}
+
+.pro-active-actions .pro-upgrade-button,
+.pro-features-panel .pro-cancel-button,
+.pro-reactivate-button {
+  width: var(--tw-action-button-width);
+  min-width: var(--tw-action-button-width);
+  max-width: var(--tw-action-button-width);
+}
+
+/* =========================
+   SUBSCRIPTION MODAL ACTIONS
+========================= */
+
+.subscription-confirm-actions {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      2,
+      var(--tw-action-button-width)
+    );
+
+  justify-content: center;
+  gap: 10px;
+}
+
+.subscription-keep-button,
+.subscription-cancel-confirm-button {
+  width: var(--tw-action-button-width);
+}
+
+/* =========================
+   DISABLED STATE
+========================= */
+
+.dashboard-primary-button:disabled,
+.panel-heading button:disabled,
+.weather-search button:disabled,
+.quick-planner-button:disabled,
+.sidebar-pro-card button:disabled,
+.pro-upgrade-button:disabled,
+.pro-features-panel .pro-cancel-button:disabled,
+.pro-reactivate-button:disabled,
+.subscription-keep-button:disabled,
+.subscription-cancel-confirm-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* =========================
+   MOBILE CONSISTENCY
+========================= */
+
+@media (max-width: 560px) {
+  .dashboard-primary-button,
+  .panel-heading button,
+  .weather-search button,
+  .quick-planner-button,
+  .sidebar-pro-card button,
+  .pro-upgrade-button,
+  .pro-features-panel .pro-cancel-button,
+  .pro-reactivate-button,
+  .subscription-keep-button,
+  .subscription-cancel-confirm-button {
+    width: var(--tw-action-button-width);
+    min-width: var(--tw-action-button-width);
+    max-width: var(--tw-action-button-width);
+
+    height: var(--tw-action-button-height);
+    min-height: var(--tw-action-button-height);
+    max-height: var(--tw-action-button-height);
+
+    flex: 0 0 var(--tw-action-button-width);
+  }
+
+  .dashboard-welcome {
+    align-items: flex-start;
+  }
+
+  .pro-active-actions {
+    align-items: flex-start;
+  }
+
+  .subscription-confirm-actions {
+    grid-template-columns:
+      repeat(
+        2,
+        var(--tw-action-button-width)
+      );
+
+    justify-content: center;
+  }
+}
+/* =====================================================
+   DASHBOARD WEATHER AUTOCOMPLETE
+===================================================== */
+
+.dashboard-layout .weather-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Dropdown container */
+
+.dashboard-layout .weather-suggestions {
+  position: absolute;
+
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+
+  z-index: 100;
+
+  width: 100%;
+  max-height: 280px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  box-sizing: border-box;
+
+  border: 1px solid #293425;
+  border-radius: 12px;
+
+  background: #080c07;
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.48);
+}
+
+/* Scrollbar */
+
+.dashboard-layout
+  .weather-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-layout
+  .weather-suggestions::-webkit-scrollbar-track {
+  background: #080c07;
+}
+
+.dashboard-layout
+  .weather-suggestions::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: #2c3728;
+}
+
+/* Individual result */
+
+.dashboard-layout
+  .weather-suggestion-item {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+
+  height: auto;
+  min-height: 60px;
+  max-height: none;
+
+  margin: 0;
+  padding: 12px 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+
+  box-sizing: border-box;
+
+  border: none;
+  border-bottom: 1px solid #1f281d;
+  border-radius: 0;
+
+  outline: none;
+
+  background: #080c07;
+  color: #f4f7f1;
+
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+
+  white-space: normal;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    padding-left 0.2s ease;
+}
+
+/* Last result */
+
+.dashboard-layout
+  .weather-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+/* Hover */
+
+.dashboard-layout
+  .weather-suggestion-item:hover {
+  padding-left: 17px;
+
+  background: rgba(202, 255, 51, 0.06);
+}
+
+/* Location icon */
+
+.dashboard-layout
+  .weather-suggestion-icon {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: rgba(202, 255, 51, 0.08);
+  color: #caff33;
+}
+
+/* Text wrapper */
+
+.dashboard-layout
+  .weather-suggestion-info {
+  min-width: 0;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* City name */
+
+.dashboard-layout
+  .weather-suggestion-info strong {
+  width: 100%;
+
+  overflow: hidden;
+
+  color: #f4f7f1;
+
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Region / country */
+
+.dashboard-layout
+  .weather-suggestion-info span {
+  width: 100%;
+
+  margin-top: 4px;
+
+  overflow: hidden;
+
+  color: #7f897a;
+
+  font-size: 10px;
+  line-height: 1.4;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Empty state */
+
+.dashboard-layout
+  .weather-suggestion-empty {
+  margin-top: 8px;
+  padding: 12px 14px;
+
+  border: 1px solid #293425;
+  border-radius: 12px;
+
+  background: #080c07;
+  color: #707a6c;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Loading state */
+
+.dashboard-layout
+  .weather-suggestion-loading {
+  margin-top: 8px;
+  padding: 12px 14px;
+
+  border: 1px solid #293425;
+  border-radius: 12px;
+
+  background: #080c07;
+  color: #879182;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 560px) {
+  .dashboard-layout
+    .weather-suggestions {
+    max-height: 230px;
+  }
+
+  .dashboard-layout
+    .weather-suggestion-item {
+    width: 100%;
+
+    min-height: 56px;
+
+    padding: 11px 12px;
+  }
+
+  .dashboard-layout
+    .weather-suggestion-item:hover {
+    padding-left: 12px;
+  }
+
+  .dashboard-layout
+    .weather-suggestion-icon {
+    width: 33px;
+    height: 33px;
+
+    flex-basis: 33px;
+  }
+
+  .dashboard-layout
+    .weather-suggestion-info strong {
+    font-size: 12px;
+  }
+
+  .dashboard-layout
+    .weather-suggestion-info span {
+    font-size: 9px;
+  }
+}
+/* =====================================================
+   FIX LONG SUBSCRIPTION BUTTON LABELS
+   Keep universal 114px × 54px button dimensions
+===================================================== */
+
+.pro-features-panel .pro-cancel-button,
+.subscription-keep-button,
+.subscription-cancel-confirm-button,
+.pro-reactivate-button {
+  width: 114px;
+  min-width: 114px;
+  max-width: 114px;
+
+  height: 54px;
+  min-height: 54px;
+  max-height: 54px;
+
+  padding: 0 8px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  text-align: center;
+
+  white-space: normal;
+
+  overflow: hidden;
+
+  overflow-wrap: break-word;
+  word-break: normal;
+
+  line-height: 1.2;
+}
+
+/* Cancel Subscription */
+
+.pro-features-panel .pro-cancel-button {
+  font-size: 10px;
+}
+
+/* Keep Pro */
+
+.subscription-keep-button {
+  font-size: 10px;
+}
+
+/* Confirm Cancellation */
+
+.subscription-cancel-confirm-button {
+  font-size: 9px;
+}
+
+/* Reactivate */
+
+.pro-reactivate-button {
+  font-size: 10px;
+}
+
+/* Mobile keeps exactly the same dimensions */
+
+@media (max-width: 560px) {
+  .pro-features-panel .pro-cancel-button,
+  .subscription-keep-button,
+  .subscription-cancel-confirm-button,
+  .pro-reactivate-button {
+    width: 114px;
+    min-width: 114px;
+    max-width: 114px;
+
+    height: 54px;
+    min-height: 54px;
+    max-height: 54px;
+
+    flex: 0 0 114px;
+  }
+  
+}
+/* =====================================================
+   GLOBAL DASHBOARD SEARCH
+===================================================== */
+
+.dashboard-search-wrapper {
+  position: relative;
+
+  width: min(420px, 45%);
+}
+
+/* Existing search bar fills wrapper */
+
+.dashboard-search-wrapper
+  .dashboard-search {
+  width: 100%;
+
+  box-sizing: border-box;
+}
+
+/* =========================
+   RESULTS DROPDOWN
+========================= */
+
+.dashboard-global-search-results {
+  position: absolute;
+
+  top: calc(100% + 9px);
+  left: 0;
+
+  z-index: 200;
+
+  width: 100%;
+  max-height: 390px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  box-sizing: border-box;
+
+  border: 1px solid #293425;
+  border-radius: 14px;
+
+  background: #080c07;
+
+  box-shadow:
+    0 20px 55px rgba(0, 0, 0, 0.55);
+}
+
+/* =========================
+   RESULT ITEM
+========================= */
+
+.dashboard-global-search-item {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+
+  min-height: 64px;
+  height: auto;
+
+  margin: 0;
+  padding: 11px 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  box-sizing: border-box;
+
+  border: none;
+  border-bottom: 1px solid #1f281d;
+  border-radius: 0;
+
+  background: #080c07;
+  color: #f4f7f1;
+
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    padding-left 0.2s ease;
+}
+
+.dashboard-global-search-item:last-child {
+  border-bottom: none;
+}
+
+.dashboard-global-search-item:hover {
+  padding-left: 16px;
+
+  background: rgba(202, 255, 51, 0.055);
+}
+
+/* =========================
+   RESULT ICON
+========================= */
+
+.dashboard-global-search-icon {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: rgba(202, 255, 51, 0.08);
+  color: #caff33;
+}
+
+/* =========================
+   RESULT TEXT
+========================= */
+
+.dashboard-global-search-info {
+  min-width: 0;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.dashboard-global-search-info strong {
+  overflow: hidden;
+
+  color: #f4f7f1;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-global-search-info small {
+  margin-top: 4px;
+
+  overflow: hidden;
+
+  color: #778273;
+
+  font-size: 9px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================
+   RESULT TYPE
+========================= */
+
+.dashboard-global-search-type {
+  flex-shrink: 0;
+
+  padding: 5px 7px;
+
+  border: 1px solid rgba(202, 255, 51, 0.13);
+  border-radius: 999px;
+
+  background: rgba(202, 255, 51, 0.045);
+  color: #9ab73d;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+/* =========================
+   NO RESULTS
+========================= */
+
+.dashboard-global-search-empty {
+  min-height: 76px;
+
+  padding: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  color: #707a6c;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+.dashboard-global-search-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-global-search-results::-webkit-scrollbar-track {
+  background: #080c07;
+}
+
+.dashboard-global-search-results::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: #2d3829;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 560px) {
+  .dashboard-search-wrapper {
+    display: none;
+  }
+}
+/* =====================================================
+   DASHBOARD SEARCH CLEAR ICON
+   Match TripWise lime theme
+===================================================== */
+
+.dashboard-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+
+  width: 16px;
+  height: 16px;
+
+  margin-left: 8px;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23caff33' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E");
+
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+
+  cursor: pointer;
+
+  opacity: 0.75;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.dashboard-search input[type="search"]::-webkit-search-cancel-button:hover {
+  opacity: 1;
+
+  transform: scale(1.08);
 }

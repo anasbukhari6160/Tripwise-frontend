@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import "../styles/dashboard.css";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useNavigate } from "react-router-dom";
+
 import {
   Bookmark,
   CalendarDays,
@@ -26,6 +28,8 @@ import MobileNav from "../components/dashboard/MobileNav";
 
 import { getCurrentUser } from "../services/auth.service";
 import { getSavedDestinations } from "../services/saved.service";
+import { getTrips } from "../services/trip.service";
+import { getDestinationPhotos } from "../services/photo.service";
 
 import {
   getWeather,
@@ -82,27 +86,97 @@ function getLocationLabel(location) {
     .join(", ");
 }
 
+function getTodayDateKey() {
+  const today = new Date();
+
+  const year = today.getFullYear();
+
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatTripDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+
+  const date = new Date(year, month - 1, day);
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function calculateTripDays(startDate, endDate) {
+  if (!startDate || !endDate) {
+    return 0;
+  }
+
+  const [startYear, startMonth, startDay] = startDate
+    .slice(0, 10)
+    .split("-")
+    .map(Number);
+
+  const [endYear, endMonth, endDay] = endDate
+    .slice(0, 10)
+    .split("-")
+    .map(Number);
+
+  const start = Date.UTC(startYear, startMonth - 1, startDay);
+
+  const end = Date.UTC(endYear, endMonth - 1, endDay);
+
+  return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+}
+
 function DashboardPage() {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
+
   const [loadingUser, setLoadingUser] = useState(true);
 
   const [weather, setWeather] = useState(null);
+
   const [loadingWeather, setLoadingWeather] = useState(true);
+
   const [weatherError, setWeatherError] = useState("");
 
   const [weatherQuery, setWeatherQuery] = useState("");
+
   const [weatherSuggestions, setWeatherSuggestions] = useState([]);
+
   const [showWeatherSuggestions, setShowWeatherSuggestions] = useState(false);
+
   const [searchingLocations, setSearchingLocations] = useState(false);
+
   const [selectedLocation, setSelectedLocation] = useState(null);
 
+  const weatherSearchRequestRef = useRef(0);
+
   const [savedDestinations, setSavedDestinations] = useState([]);
+
   const [loadingSaved, setLoadingSaved] = useState(true);
+
+  const [trips, setTrips] = useState([]);
+
+  const [loadingTrips, setLoadingTrips] = useState(true);
+
+  const [nextTripPhotos, setNextTripPhotos] = useState([]);
+
+  const [currentTripPhotoIndex, setCurrentTripPhotoIndex] = useState(0);
 
   useEffect(() => {
     async function loadUser() {
       try {
         const data = await getCurrentUser();
+
         setUser(data.user);
       } catch (error) {
         console.error("Unable to load dashboard user:", error);
@@ -156,40 +230,85 @@ function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    async function loadTrips() {
+      try {
+        setLoadingTrips(true);
+
+        const data = await getTrips();
+
+        setTrips(data || []);
+      } catch (error) {
+        if (error.status !== 403) {
+          console.error("Unable to load dashboard trips:", error);
+        }
+
+        setTrips([]);
+      } finally {
+        setLoadingTrips(false);
+      }
+    }
+
+    loadTrips();
+  }, []);
+
+  useEffect(() => {
     const cleanQuery = weatherQuery.trim();
+    const requestId = ++weatherSearchRequestRef.current;
 
     if (cleanQuery.length < 2) {
       setWeatherSuggestions([]);
       setShowWeatherSuggestions(false);
-      return;
+
+      return undefined;
     }
 
     if (
       selectedLocation &&
       weatherQuery === getLocationLabel(selectedLocation)
     ) {
-      return;
+      setWeatherSuggestions([]);
+      setShowWeatherSuggestions(false);
+
+      return undefined;
     }
 
     const timer = setTimeout(async () => {
+      if (requestId !== weatherSearchRequestRef.current) {
+        return;
+      }
+
       try {
         setSearchingLocations(true);
 
         const results = await searchLocations(cleanQuery);
 
-        setWeatherSuggestions(results || []);
-        setShowWeatherSuggestions(true);
+        if (requestId !== weatherSearchRequestRef.current) {
+          return;
+        }
+
+        const safeResults = Array.isArray(results) ? results : [];
+
+        setWeatherSuggestions(safeResults);
+        setShowWeatherSuggestions(safeResults.length > 0);
       } catch (error) {
+        if (requestId !== weatherSearchRequestRef.current) {
+          return;
+        }
+
         console.error("Dashboard location search error:", error);
 
         setWeatherSuggestions([]);
         setShowWeatherSuggestions(false);
       } finally {
-        setSearchingLocations(false);
+        if (requestId === weatherSearchRequestRef.current) {
+          setSearchingLocations(false);
+        }
       }
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [weatherQuery, selectedLocation]);
 
   async function handleWeatherSearch(event) {
@@ -197,10 +316,12 @@ function DashboardPage() {
 
     const cleanQuery = weatherQuery.trim();
 
+    weatherSearchRequestRef.current += 1;
+    setWeatherSuggestions([]);
+    setShowWeatherSuggestions(false);
+
     if (cleanQuery.length < 2) {
       setWeatherError("Enter at least 2 characters.");
-      setWeatherSuggestions([]);
-      setShowWeatherSuggestions(false);
       return;
     }
 
@@ -208,33 +329,57 @@ function DashboardPage() {
       setSearchingLocations(true);
       setWeatherError("");
 
-      const results = await searchLocations(cleanQuery);
+      let location = null;
 
-      setWeatherSuggestions(results || []);
-      setShowWeatherSuggestions(true);
+      if (
+        selectedLocation &&
+        weatherQuery === getLocationLabel(selectedLocation)
+      ) {
+        location = selectedLocation;
+      } else {
+        const results = await searchLocations(cleanQuery);
+        const safeResults = Array.isArray(results) ? results : [];
 
-      if (!results || results.length === 0) {
-        setWeatherError("No matching location found.");
+        if (safeResults.length === 0) {
+          setWeatherError("No matching location found.");
+          return;
+        }
+
+        location = safeResults[0];
+
+        setSelectedLocation(location);
+        setWeatherQuery(getLocationLabel(location));
       }
-    } catch (error) {
-      console.error("Unable to search locations:", error);
 
-      setWeatherError(error.message || "Unable to search locations.");
+      setWeatherSuggestions([]);
+      setShowWeatherSuggestions(false);
+
+      setLoadingWeather(true);
+
+      const weatherData = await getWeatherForLocation(location);
+
+      setWeather(weatherData);
+    } catch (error) {
+      console.error("Unable to search weather location:", error);
+
+      setWeatherError(error.message || "Unable to load weather.");
 
       setWeatherSuggestions([]);
       setShowWeatherSuggestions(false);
     } finally {
       setSearchingLocations(false);
+      setLoadingWeather(false);
     }
   }
 
   async function handleSelectLocation(location) {
-    setSelectedLocation(location);
-
-    setWeatherQuery(getLocationLabel(location));
+    weatherSearchRequestRef.current += 1;
 
     setWeatherSuggestions([]);
     setShowWeatherSuggestions(false);
+
+    setSelectedLocation(location);
+    setWeatherQuery(getLocationLabel(location));
     setWeatherError("");
 
     try {
@@ -253,11 +398,125 @@ function DashboardPage() {
   }
 
   function handleWeatherInputChange(event) {
-    setWeatherQuery(event.target.value);
+    weatherSearchRequestRef.current += 1;
 
+    setWeatherQuery(event.target.value);
     setSelectedLocation(null);
+
+    setWeatherSuggestions([]);
+    setShowWeatherSuggestions(false);
     setWeatherError("");
   }
+
+  const todayDateKey = getTodayDateKey();
+
+  const upcomingTrips = [...trips]
+    .filter((trip) => {
+      const endDate = trip.endDate?.slice(0, 10);
+
+      return endDate && endDate >= todayDateKey;
+    })
+    .sort((a, b) => {
+      const aStart = a.startDate?.slice(0, 10) || "";
+
+      const bStart = b.startDate?.slice(0, 10) || "";
+
+      const aEnd = a.endDate?.slice(0, 10) || "";
+
+      const bEnd = b.endDate?.slice(0, 10) || "";
+
+      const aInProgress = aStart <= todayDateKey && aEnd >= todayDateKey;
+
+      const bInProgress = bStart <= todayDateKey && bEnd >= todayDateKey;
+
+      if (aInProgress && !bInProgress) {
+        return -1;
+      }
+
+      if (!aInProgress && bInProgress) {
+        return 1;
+      }
+
+      return aStart.localeCompare(bStart);
+    });
+
+  const nextTrip = upcomingTrips[0] || null;
+
+  const nextTripFirstStop = nextTrip?.stops?.[0] || null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadNextTripPhotos() {
+      if (!nextTripFirstStop?.city) {
+        setNextTripPhotos([]);
+        setCurrentTripPhotoIndex(0);
+        return;
+      }
+
+      try {
+        setNextTripPhotos([]);
+        setCurrentTripPhotoIndex(0);
+
+        const photos = await getDestinationPhotos(
+          nextTripFirstStop.city,
+          nextTripFirstStop.country,
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        const validPhotos = (Array.isArray(photos) ? photos : []).filter(
+          (photo) => photo?.landscapeUrl || photo?.imageUrl,
+        );
+
+        setNextTripPhotos(validPhotos);
+        setCurrentTripPhotoIndex(0);
+
+        validPhotos.forEach((photo) => {
+          const image = new Image();
+
+          image.src = photo.landscapeUrl || photo.imageUrl;
+        });
+      } catch (error) {
+        console.error("Unable to load dashboard trip photos:", error);
+
+        if (!cancelled) {
+          setNextTripPhotos([]);
+          setCurrentTripPhotoIndex(0);
+        }
+      }
+    }
+
+    loadNextTripPhotos();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nextTripFirstStop?.city, nextTripFirstStop?.country]);
+
+  useEffect(() => {
+    if (nextTripPhotos.length <= 1) {
+      return undefined;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentTripPhotoIndex(
+        (previousIndex) => (previousIndex + 1) % nextTripPhotos.length,
+      );
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [nextTripPhotos]);
+
+  const nextTripPhoto = nextTripPhotos[currentTripPhotoIndex] || null;
+
+  const nextTripDays = nextTrip
+    ? calculateTripDays(nextTrip.startDate, nextTrip.endDate)
+    : 0;
 
   if (loadingUser) {
     return <div className="dashboard-loading">Loading your dashboard...</div>;
@@ -268,8 +527,11 @@ function DashboardPage() {
       <Sidebar user={user} />
 
       <div className="dashboard-main">
-        <DashboardHeader user={user} />
-
+        <DashboardHeader
+          user={user}
+          trips={trips}
+          savedDestinations={savedDestinations}
+        />
         <main className="dashboard-content">
           <section className="dashboard-welcome">
             <div>
@@ -283,7 +545,11 @@ function DashboardPage() {
               <p>Your trips, weather insights and travel plans in one place.</p>
             </div>
 
-            <button className="dashboard-primary-button" type="button">
+            <button
+              className="dashboard-primary-button"
+              type="button"
+              onClick={() => navigate("/trip-planner")}
+            >
               Plan a New Trip
             </button>
           </section>
@@ -305,8 +571,14 @@ function DashboardPage() {
             <StatCard
               icon={<CalendarDays size={20} />}
               title="Upcoming Trips"
-              value="2"
-              subtitle="Trips currently planned"
+              value={loadingTrips ? "--" : upcomingTrips.length}
+              subtitle={
+                loadingTrips
+                  ? "Loading trips..."
+                  : upcomingTrips.length === 1
+                    ? "Active or upcoming journey"
+                    : "Active or upcoming journeys"
+              }
             />
 
             <StatCard
@@ -338,30 +610,117 @@ function DashboardPage() {
 
           <section className="dashboard-grid">
             <div className="dashboard-panel upcoming-trip-panel">
-              <div className="panel-heading">
+              {nextTrip &&
+                nextTripPhoto &&
+                (nextTripPhoto.landscapeUrl || nextTripPhoto.imageUrl) && (
+                  <img
+                    key={nextTripPhoto.id || currentTripPhotoIndex}
+                    className="upcoming-trip-background"
+                    src={nextTripPhoto.landscapeUrl || nextTripPhoto.imageUrl}
+                    alt={
+                      nextTripFirstStop
+                        ? `${nextTripFirstStop.city}, ${nextTripFirstStop.country}`
+                        : "Trip destination"
+                    }
+                  />
+                )}
+
+              {nextTrip && <div className="upcoming-trip-overlay" />}
+
+              <div className="panel-heading upcoming-trip-heading">
                 <div>
                   <span className="panel-label">UPCOMING TRIP</span>
 
                   <h2>Your next journey</h2>
                 </div>
 
-                <button type="button">View Trip</button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(nextTrip ? `/trips/${nextTrip.id}` : "/trips")
+                  }
+                >
+                  {nextTrip ? "View Trip" : "View Trips"}
+                </button>
               </div>
 
-              <div className="trip-placeholder">
-                <div className="trip-placeholder-content">
-                  <span>Dubai, UAE</span>
+              {loadingTrips ? (
+                <div className="trip-placeholder">
+                  <div className="trip-placeholder-content">
+                    <span>LOADING TRIPS</span>
 
-                  <h3>Dubai Escape</h3>
+                    <h3>Finding your next journey</h3>
 
-                  <p>October 12 – October 16</p>
+                    <p>Please wait...</p>
+                  </div>
                 </div>
+              ) : nextTrip ? (
+                <div
+                  className="trip-placeholder upcoming-trip-content"
+                  onClick={() => navigate(`/trips/${nextTrip.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/trips/${nextTrip.id}`);
+                    }
+                  }}
+                >
+                  <div className="trip-placeholder-content">
+                    <span>
+                      {nextTripFirstStop
+                        ? `${nextTripFirstStop.city}, ${nextTripFirstStop.country}`
+                        : "TripWise Journey"}
+                    </span>
 
-                <div className="trip-days">
-                  <strong>4</strong>
-                  <span>Days</span>
+                    <h3>{nextTrip.title}</h3>
+
+                    <p>
+                      {formatTripDate(nextTrip.startDate)}
+                      {" – "}
+                      {formatTripDate(nextTrip.endDate)}
+                    </p>
+                  </div>
+
+                  <div className="trip-days">
+                    <strong>{nextTripDays}</strong>
+
+                    <span>{nextTripDays === 1 ? "Day" : "Days"}</span>
+                  </div>
+
+                  {nextTripPhotos.length > 1 && (
+                    <div className="trip-photo-indicators" aria-hidden="true">
+                      {nextTripPhotos.map((photo, index) => (
+                        <span
+                          key={photo.id || index}
+                          className={
+                            index === currentTripPhotoIndex ? "active" : ""
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="trip-placeholder">
+                  <div className="trip-placeholder-content">
+                    <span>NO ACTIVE OR UPCOMING TRIP</span>
+
+                    <h3>Ready for your next journey?</h3>
+
+                    <p>Create a new trip to see it here.</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="dashboard-primary-button"
+                    onClick={() => navigate("/trip-planner")}
+                  >
+                    Plan Trip
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="dashboard-panel weather-panel">
@@ -509,8 +868,7 @@ function DashboardPage() {
 
             <QuickPlanner />
           </section>
-
-          <section className="dashboard-pro-section">
+          <section id="pro-section" className="dashboard-pro-section">
             <ProFeaturesCard user={user} />
           </section>
         </main>

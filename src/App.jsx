@@ -1,5 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
+import "./styles/trips.css";
+
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
@@ -10,6 +12,10 @@ import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import WeatherPage from "./pages/WeatherPage";
 import SavedPage from "./pages/SavedPage";
+
+import TripsPage from "./pages/TripsPage";
+import TripPlannerPage from "./pages/TripPlannerPage";
+import TripDetailsPage from "./pages/TripDetailsPage";
 
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import PaymentCancelPage from "./pages/PaymentCancelPage";
@@ -63,6 +69,33 @@ function App() {
         element={
           <ProtectedRoute>
             <SavedPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/trips"
+        element={
+          <ProtectedRoute>
+            <TripsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/trip-planner"
+        element={
+          <ProtectedRoute>
+            <TripPlannerPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/trips/:tripId"
+        element={
+          <ProtectedRoute>
+            <TripDetailsPage />
           </ProtectedRoute>
         }
       />

@@ -1,10 +1,18 @@
-import { ArrowRight, CalendarDays, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, Route } from "lucide-react";
+
+import { useNavigate } from "react-router-dom";
 
 function QuickPlanner() {
+  const navigate = useNavigate();
+
+  function openPlanner() {
+    navigate("/trip-planner");
+  }
+
   return (
     <div className="dashboard-panel quick-planner-panel">
       <div className="quick-planner-icon">
-        <Sparkles size={21} />
+        <Route size={20} />
       </div>
 
       <span className="panel-label">QUICK PLANNER</span>
@@ -17,7 +25,7 @@ function QuickPlanner() {
       </p>
 
       <div className="quick-planner-fields">
-        <button className="planner-field" type="button">
+        <button type="button" className="planner-field" onClick={openPlanner}>
           <MapPin size={17} />
 
           <div>
@@ -26,7 +34,7 @@ function QuickPlanner() {
           </div>
         </button>
 
-        <button className="planner-field" type="button">
+        <button type="button" className="planner-field" onClick={openPlanner}>
           <CalendarDays size={17} />
 
           <div>
@@ -36,9 +44,13 @@ function QuickPlanner() {
         </button>
       </div>
 
-      <button className="quick-planner-button" type="button">
+      <button
+        type="button"
+        className="quick-planner-button"
+        onClick={openPlanner}
+      >
         Start Planning
-        <ArrowRight size={17} />
+        <ArrowRight size={16} />
       </button>
     </div>
   );
