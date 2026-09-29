@@ -1,107 +1,281 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-
-import { useNavigate } from "react-router-dom";
-
 import {
   Bell,
   Bookmark,
   ChevronDown,
+  LogOut,
   MapPin,
+  MessageCircle,
   Route as RouteIcon,
   Search,
+  UserRound,
 } from "lucide-react";
 
-function buildTripSearchText(trip) {
-  const stopText = (trip.stops || [])
-    .map((stop) =>
-      [stop.locationName, stop.city, stop.country].filter(Boolean).join(" "),
-    )
-    .join(" ");
+import { useEffect, useMemo, useRef, useState } from "react";
 
-  return [trip.title, trip.notes, stopText]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+import { useNavigate } from "react-router-dom";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+function getInitial(name) {
+  if (!name) {
+    return "U";
+  }
+
+  return name.trim().charAt(0).toUpperCase();
 }
 
-function buildSavedSearchText(destination) {
+function formatTripDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+
+  const date = new Date(year, month - 1, day);
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getNotificationKey(trip) {
   return [
-    destination.name,
-    destination.locationName,
-    destination.city,
-    destination.region,
-    destination.country,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
-function getSavedTitle(destination) {
-  return (
-    destination.city ||
-    destination.name ||
-    destination.locationName ||
-    "Saved destination"
-  );
-}
-
-function getSavedSubtitle(destination) {
-  return [destination.region, destination.country].filter(Boolean).join(", ");
+    trip.id,
+    trip.title || "",
+    trip.startDate || "",
+    trip.endDate || "",
+  ].join("|");
 }
 
 function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
   const navigate = useNavigate();
 
   const searchRef = useRef(null);
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
 
   const [query, setQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
 
-  const cleanQuery = query.trim().toLowerCase();
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
-  const results = useMemo(() => {
-    if (cleanQuery.length < 2) {
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const [signingOut, setSigningOut] = useState(false);
+
+  /*
+   * SEEN:
+   * Controls the green dot.
+   * Opening the notification panel marks notifications as seen.
+   */
+  const [seenNotificationKeys, setSeenNotificationKeys] = useState([]);
+
+  /*
+   * READ:
+   * Controls the number badge.
+   * Clicking a notification marks that specific notification as read.
+   */
+  const [readNotificationKeys, setReadNotificationKeys] = useState([]);
+
+  const [notificationStateLoaded, setNotificationStateLoaded] = useState(false);
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  /* =========================================================
+     GLOBAL SEARCH
+  ========================================================= */
+
+  const searchResults = useMemo(() => {
+    if (normalizedQuery.length < 2) {
       return [];
     }
 
     const tripResults = trips
-      .filter((trip) => buildTripSearchText(trip).includes(cleanQuery))
-      .slice(0, 5)
-      .map((trip) => {
-        const firstStop = trip.stops?.[0];
+      .filter((trip) => {
+        const stopText = (trip.stops || [])
+          .map((stop) =>
+            [stop.locationName, stop.city, stop.country]
+              .filter(Boolean)
+              .join(" "),
+          )
+          .join(" ");
 
-        return {
-          key: `trip-${trip.id}`,
-          type: "trip",
-          title: trip.title,
-          subtitle: firstStop
-            ? [firstStop.city, firstStop.country].filter(Boolean).join(", ")
-            : "Trip",
-          tripId: trip.id,
-        };
-      });
+        const searchableText = [trip.title, trip.notes, stopText]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return searchableText.includes(normalizedQuery);
+      })
+      .slice(0, 5)
+      .map((trip) => ({
+        id: `trip-${trip.id}`,
+        type: "trip",
+        title: trip.title || "Untitled Trip",
+        subtitle:
+          trip.stops?.[0]?.city || trip.stops?.[0]?.locationName || "Trip",
+        tripId: trip.id,
+      }));
 
     const savedResults = savedDestinations
-      .filter((destination) =>
-        buildSavedSearchText(destination).includes(cleanQuery),
-      )
+      .filter((destination) => {
+        const searchableText = [
+          destination.name,
+          destination.locationName,
+          destination.city,
+          destination.region,
+          destination.country,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return searchableText.includes(normalizedQuery);
+      })
       .slice(0, 5)
-      .map((destination) => ({
-        key: `saved-${destination.id}`,
+      .map((destination, index) => ({
+        id: `saved-${destination.id || index}`,
         type: "saved",
-        title: getSavedTitle(destination),
-        subtitle: getSavedSubtitle(destination) || "Saved destination",
-        destinationId: destination.id,
+        title:
+          destination.name ||
+          destination.locationName ||
+          destination.city ||
+          "Saved Destination",
+        subtitle: [destination.city, destination.country]
+          .filter(Boolean)
+          .join(", "),
       }));
 
     return [...tripResults, ...savedResults].slice(0, 8);
-  }, [cleanQuery, trips, savedDestinations]);
+  }, [trips, savedDestinations, normalizedQuery]);
+
+  /* =========================================================
+     NOTIFICATIONS
+  ========================================================= */
+
+  const notifications = useMemo(() => {
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    return [...trips]
+      .filter((trip) => {
+        if (!trip.endDate) {
+          return false;
+        }
+
+        const endDate = new Date(`${trip.endDate.slice(0, 10)}T00:00:00`);
+
+        return endDate >= today;
+      })
+      .sort((a, b) => {
+        const aDate = a.startDate || "";
+
+        const bDate = b.startDate || "";
+
+        return aDate.localeCompare(bDate);
+      })
+      .slice(0, 4);
+  }, [trips]);
+
+  const notificationKeys = useMemo(
+    () => notifications.map((trip) => getNotificationKey(trip)),
+    [notifications],
+  );
+
+  /* =========================================================
+     USER-SPECIFIC STORAGE
+  ========================================================= */
+
+  const userStorageId = user?.id || user?.email || "guest";
+
+  const seenStorageKey = `tripwise-seen-notifications-${userStorageId}`;
+
+  const readStorageKey = `tripwise-read-notifications-${userStorageId}`;
+
+  /* =========================================================
+     LOAD SAVED NOTIFICATION STATE
+  ========================================================= */
+
+  useEffect(() => {
+    setNotificationStateLoaded(false);
+
+    try {
+      const storedSeen = localStorage.getItem(seenStorageKey);
+
+      const storedRead = localStorage.getItem(readStorageKey);
+
+      if (storedSeen) {
+        const parsedSeen = JSON.parse(storedSeen);
+
+        setSeenNotificationKeys(Array.isArray(parsedSeen) ? parsedSeen : []);
+      } else {
+        setSeenNotificationKeys([]);
+      }
+
+      if (storedRead) {
+        const parsedRead = JSON.parse(storedRead);
+
+        setReadNotificationKeys(Array.isArray(parsedRead) ? parsedRead : []);
+      } else {
+        setReadNotificationKeys([]);
+      }
+    } catch (error) {
+      console.error("Unable to load notification state:", error);
+
+      setSeenNotificationKeys([]);
+      setReadNotificationKeys([]);
+    } finally {
+      setNotificationStateLoaded(true);
+    }
+  }, [seenStorageKey, readStorageKey]);
+
+  /* =========================================================
+     UNSEEN / UNREAD CALCULATIONS
+  ========================================================= */
+
+  const unseenNotificationCount = useMemo(() => {
+    if (!notificationStateLoaded) {
+      return 0;
+    }
+
+    return notificationKeys.filter((key) => !seenNotificationKeys.includes(key))
+      .length;
+  }, [notificationKeys, seenNotificationKeys, notificationStateLoaded]);
+
+  const unreadNotificationCount = useMemo(() => {
+    if (!notificationStateLoaded) {
+      return 0;
+    }
+
+    return notificationKeys.filter((key) => !readNotificationKeys.includes(key))
+      .length;
+  }, [notificationKeys, readNotificationKeys, notificationStateLoaded]);
+
+  const hasUnseenNotifications = unseenNotificationCount > 0;
+
+  /* =========================================================
+     OUTSIDE CLICK
+  ========================================================= */
 
   useEffect(() => {
     function handleOutsideClick(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowResults(false);
+        setShowSearchResults(false);
+      }
+
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
+
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
       }
     }
 
@@ -112,125 +286,457 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     };
   }, []);
 
-  function handleInputChange(event) {
-    const value = event.target.value;
+  /* =========================================================
+     SEARCH
+  ========================================================= */
 
-    setQuery(value);
+  function openSearchResult(result) {
+    setShowSearchResults(false);
 
-    setShowResults(value.trim().length >= 2);
-  }
-
-  function handleResultClick(result) {
     setQuery("");
-    setShowResults(false);
 
     if (result.type === "trip") {
       navigate(`/trips/${result.tripId}`);
+
       return;
     }
 
-    if (result.type === "saved") {
-      navigate("/saved");
-    }
+    navigate("/saved");
   }
 
   function handleSearchSubmit(event) {
     event.preventDefault();
 
-    if (results.length === 0) {
+    if (searchResults.length === 0) {
       return;
     }
 
-    handleResultClick(results[0]);
+    openSearchResult(searchResults[0]);
   }
 
-  const userInitial = user?.name?.trim()?.charAt(0)?.toUpperCase() || "U";
+  /* =========================================================
+     MARK ALL CURRENT NOTIFICATIONS AS SEEN
+  ========================================================= */
+
+  function markNotificationsAsSeen() {
+    if (notificationKeys.length === 0) {
+      return;
+    }
+
+    const updatedSeenKeys = Array.from(
+      new Set([...seenNotificationKeys, ...notificationKeys]),
+    );
+
+    setSeenNotificationKeys(updatedSeenKeys);
+
+    try {
+      localStorage.setItem(seenStorageKey, JSON.stringify(updatedSeenKeys));
+    } catch (error) {
+      console.error("Unable to save seen notifications:", error);
+    }
+  }
+
+  /* =========================================================
+     MARK ONE NOTIFICATION AS READ
+  ========================================================= */
+
+  function markNotificationAsRead(trip) {
+    const key = getNotificationKey(trip);
+
+    if (readNotificationKeys.includes(key)) {
+      return;
+    }
+
+    const updatedReadKeys = Array.from(new Set([...readNotificationKeys, key]));
+
+    setReadNotificationKeys(updatedReadKeys);
+
+    try {
+      localStorage.setItem(readStorageKey, JSON.stringify(updatedReadKeys));
+    } catch (error) {
+      console.error("Unable to save read notification:", error);
+    }
+  }
+
+  /* =========================================================
+     MARK ALL AS READ
+  ========================================================= */
+
+  function markAllNotificationsAsRead() {
+    if (notificationKeys.length === 0) {
+      return;
+    }
+
+    const updatedReadKeys = Array.from(
+      new Set([...readNotificationKeys, ...notificationKeys]),
+    );
+
+    setReadNotificationKeys(updatedReadKeys);
+
+    try {
+      localStorage.setItem(readStorageKey, JSON.stringify(updatedReadKeys));
+    } catch (error) {
+      console.error("Unable to save read notifications:", error);
+    }
+  }
+
+  /* =========================================================
+     BELL
+  ========================================================= */
+
+  function handleBellClick() {
+    setShowNotifications((previous) => {
+      const willOpen = !previous;
+
+      /*
+       * Opening the panel means notifications
+       * have been SEEN.
+       *
+       * Green dot disappears.
+       *
+       * They are NOT read until the user
+       * clicks the actual trip.
+       */
+      if (willOpen) {
+        markNotificationsAsSeen();
+      }
+
+      return willOpen;
+    });
+
+    setShowProfileMenu(false);
+
+    setShowSearchResults(false);
+  }
+
+  /* =========================================================
+     PROFILE
+  ========================================================= */
+
+  function handleProfileClick() {
+    setShowProfileMenu((previous) => !previous);
+
+    setShowNotifications(false);
+
+    setShowSearchResults(false);
+  }
+
+  function navigateFromProfile(path) {
+    setShowProfileMenu(false);
+
+    navigate(path);
+  }
+
+  async function handleSignOut() {
+    try {
+      setSigningOut(true);
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to sign out.");
+      }
+
+      navigate("/login", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("Header sign out error:", error);
+    } finally {
+      setSigningOut(false);
+
+      setShowProfileMenu(false);
+    }
+  }
 
   return (
     <header className="dashboard-header">
+      {/* =====================================================
+          SEARCH
+      ===================================================== */}
+
       <div className="dashboard-search-wrapper" ref={searchRef}>
         <form className="dashboard-search" onSubmit={handleSearchSubmit}>
-          <Search size={18} />
+          <Search size={17} />
 
           <input
             type="search"
-            value={query}
             placeholder="Search trips or destinations..."
-            autoComplete="off"
-            spellCheck={false}
-            onChange={handleInputChange}
-            onFocus={() => {
-              if (query.trim().length >= 2) {
-                setShowResults(true);
-              }
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+
+              setShowSearchResults(true);
+
+              setShowNotifications(false);
+
+              setShowProfileMenu(false);
             }}
+            onFocus={() => setShowSearchResults(true)}
+            autoComplete="off"
           />
         </form>
 
-        {showResults && (
+        {showSearchResults && normalizedQuery.length >= 2 && (
           <div className="dashboard-global-search-results">
-            {results.length > 0 ? (
-              results.map((result) => (
+            {searchResults.length > 0 ? (
+              searchResults.map((result) => (
                 <button
-                  key={result.key}
+                  key={result.id}
                   type="button"
                   className="dashboard-global-search-item"
-                  onClick={() => handleResultClick(result)}
+                  onClick={() => openSearchResult(result)}
                 >
-                  <span className="dashboard-global-search-icon">
+                  <div className="dashboard-global-search-icon">
                     {result.type === "trip" ? (
-                      <RouteIcon size={17} />
+                      <RouteIcon size={16} />
                     ) : (
-                      <Bookmark size={17} />
+                      <Bookmark size={16} />
                     )}
-                  </span>
+                  </div>
 
-                  <span className="dashboard-global-search-info">
+                  <div className="dashboard-global-search-info">
                     <strong>{result.title}</strong>
 
-                    <small>{result.subtitle}</small>
-                  </span>
+                    <span>{result.subtitle}</span>
+                  </div>
 
-                  <span className="dashboard-global-search-type">
-                    {result.type === "trip" ? "TRIP" : "SAVED"}
-                  </span>
+                  <small>{result.type === "trip" ? "Trip" : "Saved"}</small>
                 </button>
               ))
             ) : (
               <div className="dashboard-global-search-empty">
-                <MapPin size={18} />
+                <MapPin size={17} />
 
-                <span>No matching trips or destinations.</span>
+                <span>No matching results.</span>
               </div>
             )}
           </div>
         )}
       </div>
 
+      {/* =====================================================
+          HEADER ACTIONS
+      ===================================================== */}
+
       <div className="dashboard-header-actions">
-        <button
-          type="button"
-          className="header-icon-button"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-        </button>
+        {/* =========================
+            NOTIFICATIONS
+        ========================= */}
 
-        <button
-          type="button"
-          className="profile-menu"
-          onClick={() => navigate("/profile")}
-        >
-          <span className="profile-avatar">{userInitial}</span>
+        <div className="dashboard-notification-wrapper" ref={notificationRef}>
+          <button
+            type="button"
+            className={`dashboard-icon-button ${
+              showNotifications ? "active" : ""
+            }`}
+            onClick={handleBellClick}
+            aria-label="Notifications"
+            aria-expanded={showNotifications}
+          >
+            <Bell size={20} />
 
-          <span className="profile-details">
-            <strong>{user?.name || "TripWise User"}</strong>
+            {hasUnseenNotifications && (
+              <span className="dashboard-notification-dot" />
+            )}
+          </button>
 
-            <span>{user?.plan === "pro" ? "Pro Plan" : "Free Plan"}</span>
-          </span>
+          {showNotifications && (
+            <div className="dashboard-notification-menu">
+              <div className="dashboard-dropdown-heading">
+                <div>
+                  <strong>Notifications</strong>
 
-          <ChevronDown size={16} />
-        </button>
+                  <span>Trip reminders and updates</span>
+                </div>
+
+                {unreadNotificationCount > 0 && (
+                  <small>{unreadNotificationCount}</small>
+                )}
+              </div>
+
+              <div className="dashboard-dropdown-divider" />
+
+              {notifications.length > 0 ? (
+                <div className="dashboard-notification-list">
+                  {notifications.map((trip) => {
+                    const firstStop = trip.stops?.[0];
+
+                    const notificationKey = getNotificationKey(trip);
+
+                    const isRead =
+                      readNotificationKeys.includes(notificationKey);
+
+                    return (
+                      <button
+                        key={trip.id}
+                        type="button"
+                        className={`dashboard-notification-item ${
+                          isRead ? "read" : "unread"
+                        }`}
+                        onClick={() => {
+                          /*
+                           * Clicking THIS trip marks
+                           * only this notification
+                           * as read.
+                           */
+                          markNotificationAsRead(trip);
+
+                          setShowNotifications(false);
+
+                          navigate(`/trips/${trip.id}`);
+                        }}
+                      >
+                        <div className="dashboard-notification-item-icon">
+                          <RouteIcon size={16} />
+                        </div>
+
+                        <div>
+                          <strong>{trip.title || "Upcoming trip"}</strong>
+
+                          <span>
+                            {firstStop?.city ||
+                              firstStop?.locationName ||
+                              "Upcoming journey"}
+
+                            {trip.startDate
+                              ? ` • ${formatTripDate(trip.startDate)}`
+                              : ""}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    className="dashboard-dropdown-footer-button"
+                    onClick={() => {
+                      /*
+                       * Since the user is opening
+                       * the complete trips list,
+                       * mark visible notifications
+                       * as read.
+                       */
+                      markAllNotificationsAsRead();
+
+                      setShowNotifications(false);
+
+                      navigate("/trips");
+                    }}
+                  >
+                    View all trips
+                  </button>
+                </div>
+              ) : (
+                <div className="dashboard-notification-empty">
+                  <Bell size={22} />
+
+                  <strong>You&apos;re all caught up</strong>
+
+                  <span>Upcoming trip reminders will appear here.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* =========================
+            USER MENU
+        ========================= */}
+
+        <div className="dashboard-user-wrapper" ref={profileRef}>
+          <button
+            type="button"
+            className={`dashboard-user ${showProfileMenu ? "active" : ""}`}
+            onClick={handleProfileClick}
+            aria-expanded={showProfileMenu}
+          >
+            <div className="dashboard-user-avatar">
+              {getInitial(user?.name)}
+            </div>
+
+            <div className="dashboard-user-info">
+              <strong>{user?.name || "TripWise User"}</strong>
+
+              <span>{user?.plan === "pro" ? "Pro Plan" : "Free Plan"}</span>
+            </div>
+
+            <ChevronDown
+              size={17}
+              className={`dashboard-user-chevron ${
+                showProfileMenu ? "open" : ""
+              }`}
+            />
+          </button>
+
+          {showProfileMenu && (
+            <div className="dashboard-profile-menu">
+              <div className="dashboard-profile-summary">
+                <div className="dashboard-profile-large-avatar">
+                  {getInitial(user?.name)}
+                </div>
+
+                <div>
+                  <strong>{user?.name || "TripWise User"}</strong>
+
+                  <span>
+                    {user?.email ||
+                      `${user?.plan === "pro" ? "Pro" : "Free"} Plan`}
+                  </span>
+                </div>
+              </div>
+
+              <div className="dashboard-dropdown-divider" />
+
+              <button
+                type="button"
+                className="dashboard-profile-menu-item"
+                onClick={() => navigateFromProfile("/profile")}
+              >
+                <UserRound size={17} />
+
+                <span>My Profile</span>
+              </button>
+
+              <button
+                type="button"
+                className="dashboard-profile-menu-item"
+                onClick={() => navigateFromProfile("/trips")}
+              >
+                <RouteIcon size={17} />
+
+                <span>My Trips</span>
+              </button>
+
+              <button
+                type="button"
+                className="dashboard-profile-menu-item"
+                onClick={() => navigateFromProfile("/contact")}
+              >
+                <MessageCircle size={17} />
+
+                <span>Contact Us</span>
+              </button>
+
+              <div className="dashboard-dropdown-divider" />
+
+              <button
+                type="button"
+                className="dashboard-profile-menu-item dashboard-profile-signout"
+                onClick={handleSignOut}
+                disabled={signingOut}
+              >
+                <LogOut size={17} />
+
+                <span>{signingOut ? "Signing out..." : "Sign Out"}</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

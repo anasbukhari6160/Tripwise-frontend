@@ -19,6 +19,7 @@ import TripDetailsPage from "./pages/TripDetailsPage";
 
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import PaymentCancelPage from "./pages/PaymentCancelPage";
+import ContactPage from "./pages/ContactPage";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -114,6 +115,15 @@ function App() {
         element={
           <ProtectedRoute>
             <PaymentCancelPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/contact"
+        element={
+          <ProtectedRoute>
+            <ContactPage />
           </ProtectedRoute>
         }
       />
