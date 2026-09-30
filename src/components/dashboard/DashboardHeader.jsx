@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import { apiUrl } from "../config/api";
+import { apiUrl } from "../../config/api";
 
 const SAVED_API_URL = apiUrl("/api/saved");
 

@@ -8,5 +8,6 @@ export const API_URL = API_BASE_URL.replace(/\/+$/, "");
 
 export const apiUrl = (path) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
   return `${API_URL}${normalizedPath}`;
 };
