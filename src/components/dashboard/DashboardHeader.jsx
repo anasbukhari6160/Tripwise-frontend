@@ -14,7 +14,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+import { apiUrl } from "../config/api";
+
+const SAVED_API_URL = apiUrl("/api/saved");
 
 function getInitial(name) {
   if (!name) {
@@ -430,11 +432,10 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     try {
       setSigningOut(true);
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: "POST",
-
-        credentials: "include",
-      });
+     const response = await fetch(apiUrl("/api/auth/logout"), {
+       method: "POST",
+       credentials: "include",
+     });
 
       if (!response.ok) {
         throw new Error("Unable to sign out.");

@@ -1,3 +1,4 @@
+import { apiUrl } from "../../config/api";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -47,10 +48,10 @@ function Sidebar({ user }) {
     try {
       setSigningOut(true);
 
-      const response = await fetch("http://localhost:3000/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+     const response = await fetch(apiUrl("/api/auth/logout"), {
+       method: "POST",
+       credentials: "include",
+     });
 
       const data = await response.json();
 
@@ -102,7 +103,7 @@ function Sidebar({ user }) {
             <MapPin size={19} />
             <span>Trip Planner</span>
           </NavLink>
-          
+
           <NavLink
             to="/contact"
             className={({ isActive }) =>

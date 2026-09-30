@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:3000/api/photos";
+import { apiUrl } from "../config/api";
+
+const API_URL = apiUrl("/api/photos");
 
 export async function getDestinationPhotos(city, country) {
   if (!city?.trim()) {

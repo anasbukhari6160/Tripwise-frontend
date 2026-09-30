@@ -1,4 +1,6 @@
-const SAVED_API_URL = "http://localhost:3000/api/saved";
+import { apiUrl } from "../config/api";
+
+const SAVED_API_URL = apiUrl("/api/saved");
 
 export async function getSavedDestinations() {
   const response = await fetch(SAVED_API_URL, {

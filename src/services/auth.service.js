@@ -1,15 +1,14 @@
-const API_URL = "http://localhost:3000/api/auth";
+import { apiUrl } from "../config/api";
+
+const API_URL = apiUrl("/api/auth");
 
 export async function registerUser(userData) {
   const response = await fetch(`${API_URL}/register`, {
     method: "POST",
-
     headers: {
       "Content-Type": "application/json",
     },
-
     credentials: "include",
-
     body: JSON.stringify(userData),
   });
 
@@ -21,6 +20,7 @@ export async function registerUser(userData) {
 
   return data;
 }
+
 export async function verifyEmail(email, code) {
   const response = await fetch(`${API_URL}/verify-email`, {
     method: "POST",
@@ -42,16 +42,14 @@ export async function verifyEmail(email, code) {
 
   return data;
 }
+
 export async function loginUser(credentials) {
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",
-
     headers: {
       "Content-Type": "application/json",
     },
-
     credentials: "include",
-
     body: JSON.stringify(credentials),
   });
 
@@ -63,8 +61,9 @@ export async function loginUser(credentials) {
 
   return data;
 }
+
 export async function getCurrentUser() {
-  const response = await fetch("http://localhost:3000/api/auth/me", {
+  const response = await fetch(`${API_URL}/me`, {
     method: "GET",
     credentials: "include",
   });
@@ -77,8 +76,9 @@ export async function getCurrentUser() {
 
   return data;
 }
+
 export async function logoutUser() {
-  const response = await fetch("http://localhost:3000/api/auth/logout", {
+  const response = await fetch(`${API_URL}/logout`, {
     method: "POST",
     credentials: "include",
   });
@@ -91,6 +91,7 @@ export async function logoutUser() {
 
   return data;
 }
+
 export async function resendVerificationCode(email) {
   const response = await fetch(`${API_URL}/resend-verification`, {
     method: "POST",
@@ -109,6 +110,7 @@ export async function resendVerificationCode(email) {
 
   return data;
 }
+
 export async function forgotPassword(email) {
   const response = await fetch(`${API_URL}/forgot-password`, {
     method: "POST",
@@ -150,6 +152,7 @@ export async function resetPassword(email, code, newPassword) {
 
   return data;
 }
+
 export async function googleLogin(credential) {
   const response = await fetch(`${API_URL}/google`, {
     method: "POST",

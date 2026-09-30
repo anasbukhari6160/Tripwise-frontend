@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:3000/api/trips";
+import { apiUrl } from "../config/api";
+
+const API_URL = apiUrl("/api/trips");
 
 async function handleResponse(response) {
   let data;

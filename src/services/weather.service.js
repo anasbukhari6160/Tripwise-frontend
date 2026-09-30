@@ -1,4 +1,6 @@
-const WEATHER_API_URL = "http://localhost:3000/api/weather";
+import { apiUrl } from "../config/api";
+
+const WEATHER_API_URL = apiUrl("/api/weather");
 
 export async function getWeather(city) {
   const response = await fetch(

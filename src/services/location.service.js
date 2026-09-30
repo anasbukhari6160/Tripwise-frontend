@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:3000/api/locations";
+import { apiUrl } from "../config/api";
+
+const API_URL = apiUrl("/api/locations");
 
 async function handleResponse(response) {
   const data = await response.json();
