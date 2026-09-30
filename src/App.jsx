@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 
 import "./styles/trips.css";
 
@@ -22,112 +22,130 @@ import PaymentCancelPage from "./pages/PaymentCancelPage";
 import ContactPage from "./pages/ContactPage";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AiCopilot from "./components/ai/AiCopilot";
+
+const AUTH_ROUTES = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/verify-email",
+  "/reset-password",
+];
 
 function App() {
+  const location = useLocation();
+
+  const showAiCopilot = !AUTH_ROUTES.includes(location.pathname);
+
   return (
-    <Routes>
-      <Route path="/" element={<LoginPage />} />
+    <>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
 
-      <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
 
-      <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/weather"
-        element={
-          <ProtectedRoute>
-            <WeatherPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/weather"
+          element={
+            <ProtectedRoute>
+              <WeatherPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/saved"
-        element={
-          <ProtectedRoute>
-            <SavedPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/saved"
+          element={
+            <ProtectedRoute>
+              <SavedPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/trips"
-        element={
-          <ProtectedRoute>
-            <TripsPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/trips"
+          element={
+            <ProtectedRoute>
+              <TripsPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/trip-planner"
-        element={
-          <ProtectedRoute>
-            <TripPlannerPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/trip-planner"
+          element={
+            <ProtectedRoute>
+              <TripPlannerPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/trips/:tripId"
-        element={
-          <ProtectedRoute>
-            <TripDetailsPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/trips/:tripId"
+          element={
+            <ProtectedRoute>
+              <TripDetailsPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/payment/success"
-        element={
-          <ProtectedRoute>
-            <PaymentSuccessPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/payment/success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccessPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/payment/cancel"
-        element={
-          <ProtectedRoute>
-            <PaymentCancelPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/payment/cancel"
+          element={
+            <ProtectedRoute>
+              <PaymentCancelPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/contact"
-        element={
-          <ProtectedRoute>
-            <ContactPage />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+        <Route
+          path="/contact"
+          element={
+            <ProtectedRoute>
+              <ContactPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+
+      {showAiCopilot && <AiCopilot />}
+    </>
   );
 }
 
