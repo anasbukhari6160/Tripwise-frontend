@@ -4,9 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { ArrowLeft } from "lucide-react";
 
+import MobileNav from "../components/dashboard/MobileNav";
+
 import TripMap from "../components/trips/TripMap";
 import DestinationPhoto from "../components/trips/DestinationPhoto";
 import DestinationWeather from "../components/trips/DestinationWeather";
+import TripResiliencePanel from "../components/trips/TripResiliencePanel";
 
 import { deleteTrip, getTrip } from "../services/trip.service";
 
@@ -174,6 +177,8 @@ function TripDetailsPage() {
 
           <div className="trip-details-loading">Loading trip...</div>
         </div>
+
+        <MobileNav />
       </div>
     );
   }
@@ -200,6 +205,8 @@ function TripDetailsPage() {
             </button>
           </div>
         </div>
+
+        <MobileNav />
       </div>
     );
   }
@@ -219,7 +226,9 @@ function TripDetailsPage() {
   return (
     <div className="trip-details-page">
       <div className="trip-details-container">
-        {/* TOP BAR */}
+        {/* =====================================================
+            TOP BAR
+        ===================================================== */}
 
         <div className="trip-details-topbar">
           <button
@@ -249,11 +258,15 @@ function TripDetailsPage() {
           </div>
         </div>
 
-        {/* ERROR */}
+        {/* =====================================================
+            PAGE ERROR
+        ===================================================== */}
 
         {error && <div className="trip-page-error">{error}</div>}
 
-        {/* HERO */}
+        {/* =====================================================
+            HERO
+        ===================================================== */}
 
         <section className="trip-details-hero">
           <div className="trip-details-hero-content">
@@ -301,7 +314,9 @@ function TripDetailsPage() {
           </div>
         </section>
 
-        {/* ITINERARY */}
+        {/* =====================================================
+            ITINERARY
+        ===================================================== */}
 
         <section className="trip-details-section">
           <div className="trip-details-section-heading">
@@ -390,7 +405,19 @@ function TripDetailsPage() {
           </div>
         </section>
 
-        {/* MAP */}
+        {/* =====================================================
+            TRIP RESILIENCE
+        ===================================================== */}
+
+        <TripResiliencePanel
+          key={trip.id}
+          trip={trip}
+          onTripUpdated={setTrip}
+        />
+
+        {/* =====================================================
+            JOURNEY MAP
+        ===================================================== */}
 
         <section className="trip-details-section trip-map-section">
           <div className="trip-details-section-heading">
@@ -409,7 +436,9 @@ function TripDetailsPage() {
           <TripMap stops={trip.stops || []} />
         </section>
 
-        {/* DELETE CONFIRMATION */}
+        {/* =====================================================
+            DELETE CONFIRMATION
+        ===================================================== */}
 
         {showDeleteConfirm && (
           <div className="trip-delete-overlay">
@@ -446,6 +475,8 @@ function TripDetailsPage() {
           </div>
         )}
       </div>
+
+      <MobileNav />
     </div>
   );
 }

@@ -1,0 +1,185 @@
+/* =========================================================
+   TRIPWISE GLOBAL PAGE SPACING
+   Keeps all standalone app pages aligned consistently.
+========================================================= */
+
+:root {
+  --tw-page-max-width: 1180px;
+
+  --tw-page-side-gap: 48px;
+
+  --tw-page-top-space: 48px;
+
+  --tw-page-bottom-space: 80px;
+
+  --tw-page-back-gap: 52px;
+
+  --tw-page-heading-gap: 28px;
+}
+
+
+/* =========================================================
+   PAGE ROOTS
+========================================================= */
+
+.trip-planner-page,
+.trips-page,
+.trip-details-page,
+.weather-page,
+.saved-page,
+.profile-page,
+.contact-page {
+  min-height: 100vh;
+
+  padding: 0 !important;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SHARED DESKTOP CONTAINER
+========================================================= */
+
+.trip-planner-container,
+.trips-page-container,
+.trip-details-container,
+.weather-page-container,
+.saved-page-container,
+.profile-container,
+.contact-page-container,
+.contact-container {
+  width:
+    min(
+      var(--tw-page-max-width),
+      calc(
+        100% -
+        var(--tw-page-side-gap)
+      )
+    ) !important;
+
+  max-width:
+    var(--tw-page-max-width);
+
+  margin:
+    0
+    auto !important;
+
+  padding:
+    var(--tw-page-top-space)
+    0
+    var(--tw-page-bottom-space) !important;
+
+  box-sizing:
+    border-box;
+}
+
+
+/* =========================================================
+   BACK BUTTON → PAGE HEADING SPACING
+========================================================= */
+
+.trip-dashboard-button,
+.weather-back-button,
+.saved-back-button,
+.profile-back-button,
+.contact-back-button {
+  margin-bottom:
+    var(--tw-page-back-gap) !important;
+}
+
+
+/* =========================================================
+   PAGE HEADING → CONTENT SPACING
+========================================================= */
+
+.trip-planner-heading,
+.trips-page-heading,
+.weather-page-heading,
+.saved-heading,
+.profile-heading,
+.contact-page-heading,
+.contact-heading {
+  margin-bottom:
+    var(--tw-page-heading-gap) !important;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+  :root {
+    --tw-page-side-gap: 36px;
+
+    --tw-page-top-space: 34px;
+
+    --tw-page-bottom-space: 100px;
+
+    --tw-page-back-gap: 38px;
+  }
+
+  .trip-planner-container,
+  .trips-page-container,
+  .trip-details-container,
+  .weather-page-container,
+  .saved-page-container,
+  .profile-container,
+  .contact-page-container,
+  .contact-container {
+    width:
+      calc(
+        100% -
+        var(--tw-page-side-gap)
+      ) !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 560px) {
+  :root {
+    --tw-page-side-gap: 28px;
+
+    --tw-page-top-space: 24px;
+
+    --tw-page-bottom-space: 110px;
+
+    --tw-page-back-gap: 32px;
+
+    --tw-page-heading-gap: 24px;
+  }
+
+  .trip-planner-container,
+  .trips-page-container,
+  .trip-details-container,
+  .weather-page-container,
+  .saved-page-container,
+  .profile-container,
+  .contact-page-container,
+  .contact-container {
+    width:
+      calc(
+        100% -
+        var(--tw-page-side-gap)
+      ) !important;
+
+    padding:
+      var(--tw-page-top-space)
+      0
+      var(--tw-page-bottom-space) !important;
+  }
+
+  .trip-dashboard-button,
+  .weather-back-button,
+  .saved-back-button,
+  .profile-back-button,
+  .contact-back-button {
+    margin-bottom:
+      var(--tw-page-back-gap) !important;
+  }
+}

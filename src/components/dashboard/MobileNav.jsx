@@ -6,9 +6,16 @@ import {
   User,
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 function MobileNav() {
+  const location = useLocation();
+
+  const tripsActive =
+    location.pathname === "/trips" ||
+    location.pathname.startsWith("/trips/") ||
+    location.pathname === "/trip-planner";
+
   return (
     <nav className="mobile-dashboard-nav">
       <NavLink
@@ -31,10 +38,13 @@ function MobileNav() {
         <span>Weather</span>
       </NavLink>
 
-      <button className="mobile-nav-item" type="button">
+      <NavLink
+        to="/trips"
+        className={`mobile-nav-item ${tripsActive ? "active" : ""}`}
+      >
         <Route size={19} />
         <span>Trips</span>
-      </button>
+      </NavLink>
 
       <NavLink
         to="/saved"

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-
 import { useNavigate } from "react-router-dom";
 
 import { ArrowLeft } from "lucide-react";
+
+import MobileNav from "../components/dashboard/MobileNav";
 
 import { getTrips } from "../services/trip.service";
 
@@ -46,11 +47,8 @@ function TripsPage() {
   const navigate = useNavigate();
 
   const [trips, setTrips] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [proLocked, setProLocked] = useState(false);
 
   /* =========================================================
@@ -69,9 +67,7 @@ function TripsPage() {
         }
 
         setTrips(data);
-
         setError("");
-
         setProLocked(false);
       } catch (err) {
         if (cancelled) {
@@ -88,7 +84,6 @@ function TripsPage() {
 
         if (err.status === 403) {
           setProLocked(true);
-
           setTrips([]);
 
           return;
@@ -116,9 +111,7 @@ function TripsPage() {
   async function loadTrips() {
     try {
       setLoading(true);
-
       setError("");
-
       setProLocked(false);
 
       const data = await getTrips();
@@ -135,7 +128,6 @@ function TripsPage() {
 
       if (err.status === 403) {
         setProLocked(true);
-
         setTrips([]);
 
         return;
@@ -167,6 +159,8 @@ function TripsPage() {
 
           <div className="trips-loading-state">Loading your trips...</div>
         </div>
+
+        <MobileNav />
       </div>
     );
   }
@@ -204,6 +198,8 @@ function TripsPage() {
             </button>
           </div>
         </div>
+
+        <MobileNav />
       </div>
     );
   }
@@ -371,6 +367,8 @@ function TripsPage() {
           </div>
         )}
       </div>
+
+      <MobileNav />
     </div>
   );
 }

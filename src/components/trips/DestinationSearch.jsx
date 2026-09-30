@@ -1,271 +1,299 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import {
-  Crown,
-  CloudSun,
-  MapPinned,
-  Route,
-  Sparkles,
-  X,
-  AlertTriangle,
-  RotateCcw,
-} from "lucide-react";
+import { MapPin } from "lucide-react";
 
-import {
-  createCheckoutSession,
-  cancelSubscription,
-  reactivateSubscription,
-} from "../../services/payment.service";
+import { searchLocations } from "../../services/weather.service";
 
-function ProFeaturesCard({ user }) {
-  const [loading, setLoading] = useState(false);
+function getLocationName(location) {
+  return location?.name || location?.city || location?.locationName || "";
+}
 
-  const [cancelLoading, setCancelLoading] = useState(false);
+function getLocationLabel(location) {
+  if (!location) {
+    return "";
+  }
 
-  const [reactivateLoading, setReactivateLoading] = useState(false);
+  if (location.locationName) {
+    return location.locationName;
+  }
+
+  return [getLocationName(location), location.region, location.country]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function normalizeLocation(location) {
+  const city = location?.city || location?.name || location?.locationName || "";
+
+  const country = location?.country || "";
+
+  const region = location?.region || null;
+
+  const locationName =
+    location?.locationName ||
+    [city, region, country].filter(Boolean).join(", ");
+
+  return {
+    id: location?.id ?? null,
+
+    locationName,
+
+    city,
+
+    country,
+
+    countryCode: location?.countryCode || location?.country_code || null,
+
+    latitude: Number(location?.latitude),
+
+    longitude: Number(location?.longitude),
+
+    timezone: location?.timezone || null,
+
+    region,
+  };
+}
+
+function DestinationSearch({
+  selectedLocation = null,
+  onSelect,
+  disabled = false,
+  label = "Destination",
+  placeholder = "Search Dubai, Lahore, Paris...",
+}) {
+  const wrapperRef = useRef(null);
+
+  const requestRef = useRef(0);
+
+  const [query, setQuery] = useState(() => getLocationLabel(selectedLocation));
+
+  const [suggestions, setSuggestions] = useState([]);
+
+  const [open, setOpen] = useState(false);
+
+  const [searching, setSearching] = useState(false);
 
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  /* =========================================================
+     CLOSE ON OUTSIDE CLICK
+  ========================================================= */
 
-  const [cancelAtPeriodEndOverride, setCancelAtPeriodEndOverride] =
-    useState(null);
-
-  const isPro = user?.plan === "pro";
-
-  const cancelAtPeriodEnd =
-    cancelAtPeriodEndOverride ?? user?.cancel_at_period_end === true;
-
-  const features = [
-    {
-      icon: <MapPinned size={17} />,
-      text: "Unlimited saved destinations",
-    },
-    {
-      icon: <CloudSun size={17} />,
-      text: "Extended weather insights",
-    },
-    {
-      icon: <Route size={17} />,
-      text: "Multi-city trip planning",
-    },
-  ];
-
-  async function handleUpgrade() {
-    try {
-      setLoading(true);
-      setError("");
-      setMessage("");
-
-      const data = await createCheckoutSession();
-
-      if (!data.checkoutUrl) {
-        throw new Error("Stripe checkout URL was not returned.");
+  useEffect(() => {
+    function handleOutsideClick(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpen(false);
       }
-
-      window.location.href = data.checkoutUrl;
-    } catch (error) {
-      console.error("Unable to start Stripe checkout:", error);
-
-      setError(error.message || "Unable to start Stripe checkout.");
-    } finally {
-      setLoading(false);
     }
-  }
 
-  async function handleCancelSubscription() {
-    try {
-      setCancelLoading(true);
-      setError("");
-      setMessage("");
+    document.addEventListener("mousedown", handleOutsideClick);
 
-      const data = await cancelSubscription();
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
 
-      setCancelAtPeriodEndOverride(true);
+  /* =========================================================
+     AUTOCOMPLETE
+  ========================================================= */
 
-      setMessage(
-        data.message ||
-          "Your subscription will cancel at the end of the current billing period.",
-      );
+  useEffect(() => {
+    const cleanQuery = query.trim();
 
-      setShowCancelConfirm(false);
-    } catch (error) {
-      console.error("Unable to cancel subscription:", error);
+    const selectedLabel = getLocationLabel(selectedLocation);
 
-      setError(error.message || "Unable to cancel subscription.");
-
-      setShowCancelConfirm(false);
-    } finally {
-      setCancelLoading(false);
+    if (
+      disabled ||
+      cleanQuery.length < 2 ||
+      (selectedLocation && cleanQuery === selectedLabel)
+    ) {
+      return undefined;
     }
-  }
 
-  async function handleReactivateSubscription() {
-    try {
-      setReactivateLoading(true);
-      setError("");
-      setMessage("");
+    const requestId = ++requestRef.current;
 
-      const data = await reactivateSubscription();
+    const timer = setTimeout(async () => {
+      try {
+        setSearching(true);
 
-      setCancelAtPeriodEndOverride(false);
+        const results = await searchLocations(cleanQuery);
 
-      setMessage(
-        data.message || "Your TripWise Pro subscription has been reactivated.",
-      );
-    } catch (error) {
-      console.error("Unable to reactivate subscription:", error);
+        if (requestId !== requestRef.current) {
+          return;
+        }
 
-      setError(error.message || "Unable to reactivate subscription.");
-    } finally {
-      setReactivateLoading(false);
-    }
-  }
+        const safeResults = Array.isArray(results) ? results : [];
 
-  function handleOpenCancelModal() {
+        setSuggestions(safeResults);
+
+        setOpen(safeResults.length > 0);
+
+        setError(
+          safeResults.length === 0 ? "No matching destination found." : "",
+        );
+      } catch (requestError) {
+        if (requestId !== requestRef.current) {
+          return;
+        }
+
+        console.error("Destination search error:", requestError);
+
+        setSuggestions([]);
+
+        setOpen(false);
+
+        setError(requestError.message || "Unable to search destinations.");
+      } finally {
+        if (requestId === requestRef.current) {
+          setSearching(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [query, selectedLocation, disabled]);
+
+  /* =========================================================
+     INPUT CHANGE
+  ========================================================= */
+
+  function handleQueryChange(event) {
+    requestRef.current += 1;
+
+    const value = event.target.value;
+
+    setQuery(value);
+
+    setSuggestions([]);
+
+    setOpen(false);
+
+    setSearching(false);
+
     setError("");
-    setMessage("");
-    setShowCancelConfirm(true);
   }
 
-  function handleCloseCancelModal() {
-    if (cancelLoading) {
-      return;
-    }
+  /* =========================================================
+     SELECT DESTINATION
+  ========================================================= */
 
-    setShowCancelConfirm(false);
+  function handleSelect(location) {
+    requestRef.current += 1;
+
+    const normalized = normalizeLocation(location);
+
+    setQuery(normalized.locationName);
+
+    setSuggestions([]);
+
+    setOpen(false);
+
+    setSearching(false);
+
+    setError("");
+
+    onSelect(normalized);
   }
 
   return (
-    <div className="dashboard-panel pro-features-panel">
-      <div className="pro-features-heading">
-        <div className="pro-features-icon">
-          <Crown size={20} />
-        </div>
+    <div className="trip-destination-search" ref={wrapperRef}>
+      <label className="trip-field-label">{label}</label>
 
-        <div>
-          <span className="pro-features-label">TRIPWISE PRO</span>
+      <div className="trip-destination-search-wrapper">
+        <input
+          type="text"
+          className="trip-destination-input"
+          value={query}
+          placeholder={placeholder}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          disabled={disabled}
+          onChange={handleQueryChange}
+          onFocus={() => {
+            if (suggestions.length > 0) {
+              setOpen(true);
+            }
+          }}
+        />
 
-          <h2>
-            {isPro
-              ? "Your Pro features are unlocked."
-              : "Travel with fewer limits."}
-          </h2>
-        </div>
-      </div>
+        {searching && (
+          <span className="trip-destination-loading">Searching...</span>
+        )}
 
-      <div className="pro-features-list">
-        {features.map((feature) => (
-          <div className="pro-feature-item" key={feature.text}>
-            <span className="pro-feature-icon">{feature.icon}</span>
+        {open && suggestions.length > 0 && (
+          <div className="trip-destination-suggestions">
+            {suggestions.map((location, index) => {
+              const name = getLocationName(location);
 
-            <span>{feature.text}</span>
+              const secondary = [
+                location.district,
+                location.region,
+                location.country,
+              ]
+                .filter(Boolean)
+                .join(", ");
+
+              return (
+                <button
+                  key={
+                    location.id ||
+                    `${location.latitude}-${location.longitude}-${index}`
+                  }
+                  type="button"
+                  className="trip-destination-suggestion"
+                  onClick={() => handleSelect(location)}
+                >
+                  <div className="trip-destination-suggestion-main">
+                    <strong>{name}</strong>
+
+                    {secondary && <span>{secondary}</span>}
+                  </div>
+
+                  {location.countryCode && (
+                    <small>{location.countryCode}</small>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        ))}
+        )}
       </div>
 
-      {error && <p className="pro-payment-error">{error}</p>}
-
-      {message && <p className="pro-cancel-success">{message}</p>}
-
-      {isPro ? (
-        <div className="pro-active-actions">
-          <button className="pro-upgrade-button" type="button" disabled>
-            <Crown size={17} />
-            Pro Active
-          </button>
-
-          {cancelAtPeriodEnd ? (
-            <>
-              <div className="pro-cancellation-status">
-                Subscription cancellation scheduled. Your Pro access remains
-                active until the end of the current billing period.
-              </div>
-
-              <button
-                type="button"
-                className="pro-reactivate-button"
-                onClick={handleReactivateSubscription}
-                disabled={reactivateLoading}
-              >
-                <RotateCcw size={16} />
-
-                {reactivateLoading ? "Reactivating..." : "Keep Pro"}
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="pro-cancel-button"
-              onClick={handleOpenCancelModal}
-            >
-              Cancel subscription
-            </button>
-          )}
+      {error && (
+        <div className="trip-destination-message trip-destination-error">
+          {error}
         </div>
-      ) : (
-        <button
-          className="pro-upgrade-button"
-          type="button"
-          onClick={handleUpgrade}
-          disabled={loading}
-        >
-          <Sparkles size={17} />
-
-          {loading ? "Opening checkout..." : "Upgrade to Pro"}
-        </button>
       )}
 
-      {showCancelConfirm && (
-        <div className="subscription-confirm-overlay">
-          <div className="subscription-confirm-card">
-            <button
-              type="button"
-              className="subscription-confirm-close"
-              onClick={handleCloseCancelModal}
-              disabled={cancelLoading}
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
+      {selectedLocation && (
+        <div className="trip-selected-destination">
+          <div>
+            <strong>
+              <MapPin size={12} />{" "}
+              {selectedLocation.city || getLocationName(selectedLocation)}
+            </strong>
 
-            <div className="subscription-warning-icon">
-              <AlertTriangle size={24} />
-            </div>
-
-            <h3>Cancel TripWise Pro?</h3>
-
-            <p>
-              Your Pro features will remain active until the end of your current
-              billing period. You will not be charged again after the
-              subscription ends.
-            </p>
-
-            <div className="subscription-confirm-actions">
-              <button
-                type="button"
-                className="subscription-keep-button"
-                onClick={handleCloseCancelModal}
-                disabled={cancelLoading}
-              >
-                Keep Pro
-              </button>
-
-              <button
-                type="button"
-                className="subscription-cancel-confirm-button"
-                onClick={handleCancelSubscription}
-                disabled={cancelLoading}
-              >
-                {cancelLoading ? "Cancelling..." : "Confirm cancellation"}
-              </button>
-            </div>
+            <span>
+              {selectedLocation.country}
+              {selectedLocation.region ? ` · ${selectedLocation.region}` : ""}
+            </span>
           </div>
+
+          {Number.isFinite(Number(selectedLocation.latitude)) &&
+            Number.isFinite(Number(selectedLocation.longitude)) && (
+              <small>
+                {Number(selectedLocation.latitude).toFixed(4)},{" "}
+                {Number(selectedLocation.longitude).toFixed(4)}
+              </small>
+            )}
         </div>
       )}
     </div>
   );
 }
 
-export default ProFeaturesCard;
+export default DestinationSearch;

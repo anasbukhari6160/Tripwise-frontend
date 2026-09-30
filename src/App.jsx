@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from "react-router-dom";
 
 import "./styles/trips.css";
+import "./styles/page-layout.css";
 
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
