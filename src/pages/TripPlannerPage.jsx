@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ArrowLeft } from "lucide-react";
 
+import MobileNav from "../components/dashboard/MobileNav";
 import TripForm from "../components/trips/TripForm";
 
 import { createTrip, getTrip, updateTrip } from "../services/trip.service";
@@ -146,15 +148,25 @@ function TripPlannerPage() {
     navigate("/dashboard");
   }
 
+  /* =========================================================
+     LOADING
+  ========================================================= */
+
   if (loadingTrip) {
     return (
       <div className="trip-planner-page">
         <div className="trip-planner-container">
           <div className="trip-details-loading">Loading trip...</div>
         </div>
+
+        <MobileNav />
       </div>
     );
   }
+
+  /* =========================================================
+     EDIT ERROR
+  ========================================================= */
 
   if (isEditMode && !editingTrip) {
     return (
@@ -184,9 +196,15 @@ function TripPlannerPage() {
 
           {pageError && <div className="trip-page-error">{pageError}</div>}
         </div>
+
+        <MobileNav />
       </div>
     );
   }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <div className="trip-planner-page">
@@ -229,6 +247,8 @@ function TripPlannerPage() {
           submitLabel={isEditMode ? "Save Changes" : "Create Trip"}
         />
       </div>
+
+      <MobileNav />
     </div>
   );
 }

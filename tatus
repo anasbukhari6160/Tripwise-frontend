@@ -1,0 +1,15 @@
+  develop[m
+  feature/03-auth-integration[m
+  feature/04-forgot-password[m
+  feature/05-google-auth[m
+  feature/06-dashboard-ui[m
+  feature/07-weather-integration[m
+  feature/08-profile-crud[m
+  feature/09-saved-destinations[m
+  feature/10-stripe-payments[m
+  feature/11-trip-planner[m
+  feature/12-contact-us[m
+  feature/13-change-password[m
+  feature/15-ai-copilot[m
+* [32mfeature/16-trip-resilience[m
+  main[m
