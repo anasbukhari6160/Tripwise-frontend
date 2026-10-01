@@ -20,7 +20,9 @@ The API tests use Node's experimental VM module support to load the existing Vit
 
 Set variables for each intended deployment environment before building. Rebuild when they change. Only public values belong in VITE_ variables. Never put backend secrets in this repository.
 
-The build rejects missing configuration and HTTP/localhost production API targets. The audited local .env uses a development API target, so a plain production build will fail until its process environment supplies a production VITE_API_URL. The production verification build used the supplied Railway origin as a temporary process variable; the frontend .env was not edited.
+Add both variables under Vercel -> Project -> Settings -> Environment Variables and tick them for **both** the Production and Preview environments. A variable added to only one environment leaves the other environment's build failing on the missing-value check, which is the usual cause of a failing PR Preview. Do not add `*.vercel.app` to the backend CORS allowlist to work around a Preview host.
+
+The build rejects missing configuration and HTTP/localhost production API targets. Local development values live in the gitignored `.env.development.local`, which Vite loads only in development mode, so `npm run dev` can use `http://localhost:3000` while `npm run build` still resolves the production origin from `.env` or the process environment.
 
 vercel.json provides the React Router fallback for deep links and refreshes. Preview deployment origins must match the backend FRONTEND_URL configuration; a wildcard credentialed CORS policy is not used.
 

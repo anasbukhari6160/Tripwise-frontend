@@ -10,6 +10,10 @@ test("API configuration normalizes URLs and rejects invalid production settings"
     assert.throws(() => validateApiUrl(value, true));
   }
   assert.throws(() => validateGoogleClientId(""));
+  for (const value of ["http://0.0.0.0:3000", "https://api.local", "https://[::1]:3000"]) {
+    assert.throws(() => validateApiUrl(value, true));
+  }
+  assert.equal(validateApiUrl("http://localhost:3000", false), "http://localhost:3000");
 });
 
 test("API requests preserve credentials, routes, error metadata and bounded failure handling", async () => {
