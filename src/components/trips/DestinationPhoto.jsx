@@ -38,7 +38,7 @@ function DestinationPhoto({ city, country }) {
           return;
         }
 
-        console.error(`Unable to load photo for ${city}:`, error);
+        if (import.meta.env.DEV) console.error(`Unable to load photo for ${city}:`, error);
 
         setPhoto(null);
       } finally {

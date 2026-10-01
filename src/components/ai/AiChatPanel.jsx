@@ -8,10 +8,6 @@ const STARTER_PROMPTS = [
   "Help me improve my itinerary",
 ];
 
-/* =========================================================
-   SEND ICON
-========================================================= */
-
 function SendIcon({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
@@ -27,10 +23,6 @@ function SendIcon({ size = 18 }) {
   );
 }
 
-/* =========================================================
-   SOURCE DOMAIN
-========================================================= */
-
 function getSourceDomain(url) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -38,10 +30,6 @@ function getSourceDomain(url) {
     return "Source";
   }
 }
-
-/* =========================================================
-   AI CHAT PANEL
-========================================================= */
 
 function AiChatPanel({ onClose, isOpen }) {
   const [messages, setMessages] = useState([]);
@@ -54,10 +42,6 @@ function AiChatPanel({ onClose, isOpen }) {
 
   const messagesEndRef = useRef(null);
 
-  /* =======================================================
-     AUTO SCROLL
-  ======================================================= */
-
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -68,10 +52,6 @@ function AiChatPanel({ onClose, isOpen }) {
       block: "end",
     });
   }, [messages, isLoading, isOpen]);
-
-  /* =======================================================
-     SEND MESSAGE
-  ======================================================= */
 
   async function submitMessage(content) {
     const cleanInput = content.trim();
@@ -114,27 +94,15 @@ function AiChatPanel({ onClose, isOpen }) {
     }
   }
 
-  /* =======================================================
-     FORM SUBMIT
-  ======================================================= */
-
   async function handleSubmit(event) {
     event.preventDefault();
 
     await submitMessage(input);
   }
 
-  /* =======================================================
-     STARTER PROMPTS
-  ======================================================= */
-
   async function handleStarterPrompt(prompt) {
     await submitMessage(prompt);
   }
-
-  /* =======================================================
-     ENTER TO SEND
-  ======================================================= */
 
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -152,9 +120,6 @@ function AiChatPanel({ onClose, isOpen }) {
       aria-label="TripWise AI Copilot"
       aria-hidden={!isOpen}
     >
-      {/* ===================================================
-          HEADER
-      =================================================== */}
 
       <header className="ai-chat-panel__header">
         <div className="ai-chat-panel__identity">
@@ -185,10 +150,6 @@ function AiChatPanel({ onClose, isOpen }) {
         </button>
       </header>
 
-      {/* ===================================================
-          BODY
-      =================================================== */}
-
       <div className="ai-chat-panel__body">
         {messages.length === 0 ? (
           <div className="ai-chat-empty">
@@ -197,10 +158,6 @@ function AiChatPanel({ onClose, isOpen }) {
             <h3>Where are we going?</h3>
 
             <p>Ask TripWise AI to plan, improve, or rethink your next trip.</p>
-
-            {/* =============================================
-                STARTER SUGGESTIONS
-            ============================================= */}
 
             <div className="ai-chat-suggestions">
               {STARTER_PROMPTS.map((prompt) => (
@@ -231,10 +188,6 @@ function AiChatPanel({ onClose, isOpen }) {
                 </div>
 
                 <div className="ai-message__bubble">{message.content}</div>
-
-                {/* =====================================
-                      GROUNDED SOURCES
-                  ===================================== */}
 
                 {message.role === "assistant" &&
                   message.sources?.length > 0 && (
@@ -283,10 +236,6 @@ function AiChatPanel({ onClose, isOpen }) {
               </div>
             ))}
 
-            {/* ===========================================
-                TYPING INDICATOR
-            =========================================== */}
-
             {isLoading && (
               <div className="ai-message ai-message--assistant">
                 <div className="ai-message__label">TripWise AI</div>
@@ -304,19 +253,11 @@ function AiChatPanel({ onClose, isOpen }) {
         )}
       </div>
 
-      {/* ===================================================
-          ERROR
-      =================================================== */}
-
       {error && (
         <div className="ai-chat-error" role="alert">
           {error}
         </div>
       )}
-
-      {/* ===================================================
-          INPUT
-      =================================================== */}
 
       <form className="ai-chat-composer" onSubmit={handleSubmit}>
         <textarea
@@ -339,10 +280,6 @@ function AiChatPanel({ onClose, isOpen }) {
           <SendIcon size={18} />
         </button>
       </form>
-
-      {/* ===================================================
-          FOOTER
-      =================================================== */}
 
       <div className="ai-chat-panel__footer">
         AI responses may require verification for live travel information.

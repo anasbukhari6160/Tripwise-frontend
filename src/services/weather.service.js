@@ -1,59 +1,20 @@
-import { apiUrl } from "../config/api";
-
-const WEATHER_API_URL = apiUrl("/api/weather");
+import { apiRequest } from "./api.service";
 
 export async function getWeather(city) {
-  const response = await fetch(
-    `${WEATHER_API_URL}?city=${encodeURIComponent(city)}`,
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to load weather.");
-  }
-
+  const data = await apiRequest("/api/weather?city=" + encodeURIComponent(city));
   return data.weather;
 }
-
 export async function searchLocations(query) {
   const cleanQuery = query.trim();
-
-  if (cleanQuery.length < 2) {
-    return [];
-  }
-
-  const response = await fetch(
-    `${WEATHER_API_URL}/locations?query=${encodeURIComponent(cleanQuery)}`,
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to search locations.");
-  }
-
+  if (cleanQuery.length < 2) return [];
+  const data = await apiRequest("/api/weather/locations?query=" + encodeURIComponent(cleanQuery));
   return data.locations || [];
 }
-
 export async function getWeatherForLocation(location) {
   const params = new URLSearchParams({
-    latitude: String(location.latitude),
-    longitude: String(location.longitude),
-    name: location.name,
-    country: location.country,
-    region: location.region || "",
+    latitude: String(location.latitude), longitude: String(location.longitude),
+    name: location.name, country: location.country, region: location.region || "",
   });
-
-  const response = await fetch(
-    `${WEATHER_API_URL}/location?${params.toString()}`,
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to load weather.");
-  }
-
+  const data = await apiRequest("/api/weather/location?" + params);
   return data.weather;
 }

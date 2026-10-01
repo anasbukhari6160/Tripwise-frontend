@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
 
@@ -11,14 +11,16 @@ import {
 function VerifyEmailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
-  const email = searchParams.get("email") || "";
+  const email = (searchParams.get("email") || "").trim().toLowerCase();
 
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState(location.state?.message || (!email ? "Email is missing. Return to sign in and enter your email." : ""));
   const [loading, setLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(60);
+  const [resending, setResending] = useState(false);
+  const [resendTimer, setResendTimer] = useState(location.state?.canResend ? 0 : 60);
   const [resendMessage, setResendMessage] = useState("");
 
   const inputRefs = useRef([]);
@@ -36,6 +38,8 @@ function VerifyEmailPage() {
   }, [resendTimer]);
 
   async function handleResend() {
+    if (resending || loading || !email || resendTimer > 0) return;
+    setResending(true);
     try {
       setError("");
       setResendMessage("");
@@ -49,6 +53,8 @@ function VerifyEmailPage() {
       inputRefs.current[0]?.focus();
     } catch (error) {
       setError(error.message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -99,6 +105,7 @@ function VerifyEmailPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading || resending || !email) return;
 
     setError("");
     setResendMessage("");
@@ -154,7 +161,7 @@ function VerifyEmailPage() {
 
         {error && <p className="form-error">{error}</p>}
 
-        <button className="primary-button" type="submit" disabled={loading}>
+        <button className="primary-button" type="submit" disabled={loading || resending || !email}>
           {loading ? "Verifying..." : "Verify Email"}
         </button>
       </form>
@@ -167,8 +174,8 @@ function VerifyEmailPage() {
         {resendTimer > 0 ? (
           <p className="resend-timer">Resend code in {resendTimer}s</p>
         ) : (
-          <button type="button" className="text-button" onClick={handleResend}>
-            Resend Code
+          <button type="button" className="text-button" onClick={handleResend} disabled={resending || loading || !email}>
+            {resending ? "Sending..." : "Resend Code"}
           </button>
         )}
       </div>

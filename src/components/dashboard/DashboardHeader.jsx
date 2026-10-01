@@ -14,9 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import { apiUrl } from "../../config/api";
-
-const SAVED_API_URL = apiUrl("/api/saved");
+import { logoutUser } from "../../services/auth.service";
 
 function getInitial(name) {
   if (!name) {
@@ -63,7 +61,7 @@ function readStoredNotificationKeys(storageKey) {
 
     return Array.isArray(parsedValue) ? parsedValue : [];
   } catch (error) {
-    console.error("Unable to load notification state:", error);
+    if (import.meta.env.DEV) console.error("Unable to load notification state:", error);
 
     return [];
   }
@@ -87,10 +85,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const [signingOut, setSigningOut] = useState(false);
-
-  /* =========================================================
-     USER-SPECIFIC STORAGE
-  ========================================================= */
 
   const userStorageId = user?.id || user?.email || "guest";
 
@@ -121,10 +115,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
   );
 
   const normalizedQuery = query.trim().toLowerCase();
-
-  /* =========================================================
-     GLOBAL SEARCH
-  ========================================================= */
 
   const searchResults = useMemo(() => {
     if (normalizedQuery.length < 2) {
@@ -197,10 +187,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     return [...tripResults, ...savedResults].slice(0, 8);
   }, [trips, savedDestinations, normalizedQuery]);
 
-  /* =========================================================
-     NOTIFICATIONS
-  ========================================================= */
-
   const notifications = useMemo(() => {
     const today = new Date();
 
@@ -231,10 +217,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     [notifications],
   );
 
-  /* =========================================================
-     UNSEEN / UNREAD CALCULATIONS
-  ========================================================= */
-
   const unseenNotificationCount = useMemo(
     () =>
       notificationKeys.filter((key) => !seenNotificationKeys.includes(key))
@@ -250,10 +232,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
   );
 
   const hasUnseenNotifications = unseenNotificationCount > 0;
-
-  /* =========================================================
-     OUTSIDE CLICK
-  ========================================================= */
 
   useEffect(() => {
     function handleOutsideClick(event) {
@@ -280,10 +258,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     };
   }, []);
 
-  /* =========================================================
-     SEARCH
-  ========================================================= */
-
   function openSearchResult(result) {
     setShowSearchResults(false);
 
@@ -308,10 +282,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     openSearchResult(searchResults[0]);
   }
 
-  /* =========================================================
-     MARK ALL CURRENT NOTIFICATIONS AS SEEN
-  ========================================================= */
-
   function markNotificationsAsSeen() {
     if (notificationKeys.length === 0) {
       return;
@@ -326,13 +296,9 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     try {
       localStorage.setItem(seenStorageKey, JSON.stringify(updatedSeenKeys));
     } catch (error) {
-      console.error("Unable to save seen notifications:", error);
+      if (import.meta.env.DEV) console.error("Unable to save seen notifications:", error);
     }
   }
-
-  /* =========================================================
-     MARK ONE NOTIFICATION AS READ
-  ========================================================= */
 
   function markNotificationAsRead(trip) {
     const key = getNotificationKey(trip);
@@ -348,13 +314,9 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     try {
       localStorage.setItem(readStorageKey, JSON.stringify(updatedReadKeys));
     } catch (error) {
-      console.error("Unable to save read notification:", error);
+      if (import.meta.env.DEV) console.error("Unable to save read notification:", error);
     }
   }
-
-  /* =========================================================
-     MARK ALL AS READ
-  ========================================================= */
 
   function markAllNotificationsAsRead() {
     if (notificationKeys.length === 0) {
@@ -370,29 +332,13 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     try {
       localStorage.setItem(readStorageKey, JSON.stringify(updatedReadKeys));
     } catch (error) {
-      console.error("Unable to save read notifications:", error);
+      if (import.meta.env.DEV) console.error("Unable to save read notifications:", error);
     }
   }
-
-  /* =========================================================
-     BELL
-  ========================================================= */
 
   function handleBellClick() {
     setShowNotifications((previous) => {
       const willOpen = !previous;
-
-      /*
-       * Opening the panel means
-       * notifications have been
-       * SEEN.
-       *
-       * Green dot disappears.
-       *
-       * Notifications are not read
-       * until the user opens the
-       * notification/trip.
-       */
 
       if (willOpen) {
         markNotificationsAsSeen();
@@ -405,10 +351,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
 
     setShowSearchResults(false);
   }
-
-  /* =========================================================
-     PROFILE
-  ========================================================= */
 
   function handleProfileClick() {
     setShowProfileMenu((previous) => !previous);
@@ -424,28 +366,17 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     navigate(path);
   }
 
-  /* =========================================================
-     SIGN OUT
-  ========================================================= */
-
   async function handleSignOut() {
     try {
       setSigningOut(true);
 
-     const response = await fetch(apiUrl("/api/auth/logout"), {
-       method: "POST",
-       credentials: "include",
-     });
-
-      if (!response.ok) {
-        throw new Error("Unable to sign out.");
-      }
+      await logoutUser();
 
       navigate("/login", {
         replace: true,
       });
     } catch (error) {
-      console.error("Header sign out error:", error);
+      window.alert(error.message || "Unable to sign out.");
     } finally {
       setSigningOut(false);
 
@@ -453,15 +384,8 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
     }
   }
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
     <header className="dashboard-header">
-      {/* =====================================================
-          SEARCH
-      ===================================================== */}
 
       <div className="dashboard-search-wrapper" ref={searchRef}>
         <form className="dashboard-search" onSubmit={handleSearchSubmit}>
@@ -523,14 +447,7 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
         )}
       </div>
 
-      {/* =====================================================
-          HEADER ACTIONS
-      ===================================================== */}
-
       <div className="dashboard-header-actions">
-        {/* =========================
-            NOTIFICATIONS
-        ========================= */}
 
         <div className="dashboard-notification-wrapper" ref={notificationRef}>
           <button
@@ -637,10 +554,6 @@ function DashboardHeader({ user, trips = [], savedDestinations = [] }) {
             </div>
           )}
         </div>
-
-        {/* =========================
-            USER MENU
-        ========================= */}
 
         <div className="dashboard-user-wrapper" ref={profileRef}>
           <button

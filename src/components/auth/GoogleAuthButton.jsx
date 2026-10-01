@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 
@@ -7,34 +7,13 @@ import { googleLogin } from "../../services/auth.service";
 function GoogleAuthButton({ onError }) {
   const navigate = useNavigate();
 
-  const containerRef = useRef(null);
-  const [buttonWidth, setButtonWidth] = useState(400);
-
-  useEffect(() => {
-    const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
-
-    function updateWidth() {
-      const width = container.clientWidth;
-
-      setButtonWidth(Math.min(width, 400));
-    }
-
-    updateWidth();
-
-    const observer = new ResizeObserver(updateWidth);
-
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  const pendingRef = useRef(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleGoogleSuccess(credentialResponse) {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setLoading(true);
     try {
       if (!credentialResponse.credential) {
         throw new Error("Google authentication failed.");
@@ -47,6 +26,9 @@ function GoogleAuthButton({ onError }) {
       if (onError) {
         onError(error.message);
       }
+    } finally {
+      pendingRef.current = false;
+      setLoading(false);
     }
   }
 
@@ -57,7 +39,7 @@ function GoogleAuthButton({ onError }) {
   }
 
   return (
-    <div className="google-auth-container" ref={containerRef}>
+    <div className="google-auth-container" aria-busy={loading}>
       <GoogleLogin
         onSuccess={handleGoogleSuccess}
         onError={handleGoogleError}
@@ -66,8 +48,14 @@ function GoogleAuthButton({ onError }) {
         shape="pill"
         text="continue_with"
         logo_alignment="left"
-        width={buttonWidth}
       />
+
+      {loading && (
+        <span className="google-auth-loading" role="status">
+          <span className="google-auth-spinner" aria-hidden="true" />
+          Signing in...
+        </span>
+      )}
     </div>
   );
 }

@@ -47,7 +47,7 @@ function PaymentSuccessPage() {
             continue;
           }
         } catch (error) {
-          console.error("Payment verification error:", error);
+          if (import.meta.env.DEV) console.error("Payment verification error:", error);
 
           if (attempt === 7) {
             setStatus("error");

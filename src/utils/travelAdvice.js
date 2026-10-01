@@ -13,7 +13,6 @@ export function getTravelAdvice(weather) {
 
   const advice = [];
 
-  // Extreme heat
   if (temperature >= 35) {
     advice.push({
       type: "heat",
@@ -30,7 +29,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Cold weather
   if (temperature <= 10 && temperature > 0) {
     advice.push({
       type: "cold",
@@ -40,7 +38,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Freezing conditions
   if (temperature <= 0) {
     advice.push({
       type: "freezing",
@@ -50,7 +47,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Rain
   if (
     condition.includes("rain") ||
     condition.includes("shower") ||
@@ -64,7 +60,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Thunderstorm
   if (condition.includes("thunder")) {
     advice.push({
       type: "storm",
@@ -74,7 +69,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Snow
   if (condition.includes("snow")) {
     advice.push({
       type: "snow",
@@ -84,7 +78,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Fog
   if (condition.includes("fog")) {
     advice.push({
       type: "fog",
@@ -94,7 +87,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Strong wind
   if (Number.isFinite(windSpeed) && windSpeed >= 30) {
     advice.push({
       type: "wind",
@@ -104,7 +96,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // High humidity
   if (Number.isFinite(humidity) && humidity >= 75 && temperature >= 24) {
     advice.push({
       type: "humidity",
@@ -114,7 +105,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Sunny / hot conditions
   if (condition.includes("clear") && temperature >= 28) {
     advice.push({
       type: "sun",
@@ -124,7 +114,6 @@ export function getTravelAdvice(weather) {
     });
   }
 
-  // Normal conditions fallback
   if (advice.length === 0) {
     advice.push({
       type: "normal",

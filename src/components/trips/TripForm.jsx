@@ -66,10 +66,6 @@ function TripFormContent({
 
   const [error, setError] = useState("");
 
-  /* =========================================================
-     FIELD CHANGE
-  ========================================================= */
-
   function handleFieldChange(event) {
     const { name, value } = event.target;
 
@@ -80,10 +76,6 @@ function TripFormContent({
       [name]: value,
     }));
   }
-
-  /* =========================================================
-     STOP CHANGE
-  ========================================================= */
 
   function handleStopChange(index, changes) {
     setError("");
@@ -102,10 +94,6 @@ function TripFormContent({
     }));
   }
 
-  /* =========================================================
-     ADD STOP
-  ========================================================= */
-
   function addStop() {
     setError("");
 
@@ -122,10 +110,6 @@ function TripFormContent({
     });
   }
 
-  /* =========================================================
-     REMOVE STOP
-  ========================================================= */
-
   function removeStop(index) {
     setError("");
 
@@ -141,10 +125,6 @@ function TripFormContent({
       };
     });
   }
-
-  /* =========================================================
-     MOVE STOP UP
-  ========================================================= */
 
   function moveStopUp(index) {
     if (index <= 0) {
@@ -163,10 +143,6 @@ function TripFormContent({
     });
   }
 
-  /* =========================================================
-     MOVE STOP DOWN
-  ========================================================= */
-
   function moveStopDown(index) {
     setForm((previous) => {
       if (index >= previous.stops.length - 1) {
@@ -183,10 +159,6 @@ function TripFormContent({
       };
     });
   }
-
-  /* =========================================================
-     VALIDATION
-  ========================================================= */
 
   function validateForm() {
     const title = form.title.trim();
@@ -281,10 +253,6 @@ function TripFormContent({
     return "";
   }
 
-  /* =========================================================
-     BUILD PAYLOAD
-  ========================================================= */
-
   function buildPayload() {
     return {
       title: form.title.trim(),
@@ -317,10 +285,6 @@ function TripFormContent({
     };
   }
 
-  /* =========================================================
-     SUBMIT
-  ========================================================= */
-
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -341,15 +305,8 @@ function TripFormContent({
     }
   }
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
     <form className="trip-form" onSubmit={handleSubmit}>
-      {/* =====================================================
-          TRIP DETAILS
-      ===================================================== */}
 
       <section className="trip-form-section">
         <div className="trip-form-section-heading">
@@ -363,7 +320,6 @@ function TripFormContent({
         </div>
 
         <div className="trip-form-grid">
-          {/* TITLE */}
 
           <div className="trip-form-group trip-form-group-full">
             <label htmlFor="trip-title">Trip title</label>
@@ -380,8 +336,6 @@ function TripFormContent({
             />
           </div>
 
-          {/* START DATE */}
-
           <div className="trip-form-group">
             <label htmlFor="trip-start-date">Start date</label>
 
@@ -394,8 +348,6 @@ function TripFormContent({
               disabled={submitting}
             />
           </div>
-
-          {/* END DATE */}
 
           <div className="trip-form-group">
             <label htmlFor="trip-end-date">End date</label>
@@ -410,8 +362,6 @@ function TripFormContent({
               disabled={submitting}
             />
           </div>
-
-          {/* NOTES */}
 
           <div className="trip-form-group trip-form-group-full">
             <label htmlFor="trip-notes">Notes</label>
@@ -434,10 +384,6 @@ function TripFormContent({
           </div>
         </div>
       </section>
-
-      {/* =====================================================
-          ITINERARY
-      ===================================================== */}
 
       <section className="trip-form-section">
         <div className="trip-form-section-heading trip-form-itinerary-heading">
@@ -483,11 +429,7 @@ function TripFormContent({
         </button>
       </section>
 
-      {/* ERROR */}
-
       {error && <div className="trip-form-error">{error}</div>}
-
-      {/* SUBMIT */}
 
       <div className="trip-form-actions">
         <button
@@ -501,14 +443,6 @@ function TripFormContent({
     </form>
   );
 }
-
-/* =========================================================
-   WRAPPER
-
-   Changing the trip key remounts TripFormContent so that
-   edit mode receives a fresh state without synchronously
-   calling setState from useEffect.
-========================================================= */
 
 function TripForm(props) {
   const initialTrip = props.initialTrip;

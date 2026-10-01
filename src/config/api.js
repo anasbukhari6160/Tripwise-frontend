@@ -1,13 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { validateApiUrl } from "./environment.js";
 
-if (!API_BASE_URL) {
-  throw new Error("VITE_API_URL is not configured");
+export const API_URL = validateApiUrl(import.meta.env.VITE_API_URL, import.meta.env.PROD);
+
+export function apiUrl(path) {
+  if (typeof path !== "string" || !path.trim()) throw new Error("An API path is required.");
+  return API_URL + "/" + path.replace(/^\/+/, "");
 }
-
-export const API_URL = API_BASE_URL.replace(/\/+$/, "");
-
-export const apiUrl = (path) => {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  return `${API_URL}${normalizedPath}`;
-};

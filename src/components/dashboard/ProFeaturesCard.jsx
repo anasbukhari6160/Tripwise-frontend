@@ -66,7 +66,7 @@ function ProFeaturesCard({ user }) {
 
       window.location.href = data.checkoutUrl;
     } catch (error) {
-      console.error("Unable to start Stripe checkout:", error);
+      if (import.meta.env.DEV) console.error("Unable to start Stripe checkout:", error);
 
       setError(error.message || "Unable to start Stripe checkout.");
     } finally {
@@ -91,7 +91,7 @@ function ProFeaturesCard({ user }) {
 
       setShowCancelConfirm(false);
     } catch (error) {
-      console.error("Unable to cancel subscription:", error);
+      if (import.meta.env.DEV) console.error("Unable to cancel subscription:", error);
 
       setError(error.message || "Unable to cancel subscription.");
 
@@ -115,7 +115,7 @@ function ProFeaturesCard({ user }) {
         data.message || "Your TripWise Pro subscription has been reactivated.",
       );
     } catch (error) {
-      console.error("Unable to reactivate subscription:", error);
+      if (import.meta.env.DEV) console.error("Unable to reactivate subscription:", error);
 
       setError(error.message || "Unable to reactivate subscription.");
     } finally {

@@ -99,7 +99,7 @@ function DestinationWeather({ city, country, latitude, longitude }) {
           return;
         }
 
-        console.error(`Unable to load weather for ${city}:`, err);
+        if (import.meta.env.DEV) console.error(`Unable to load weather for ${city}:`, err);
 
         setWeather(null);
 
@@ -140,7 +140,7 @@ function DestinationWeather({ city, country, latitude, longitude }) {
 
   return (
     <div className="trip-stop-weather">
-      {/* LIVE WEATHER HEADER */}
+
       <div className="trip-stop-weather-header">
         <div>
           <span>LIVE WEATHER</span>
@@ -153,7 +153,6 @@ function DestinationWeather({ city, country, latitude, longitude }) {
         </div>
       </div>
 
-      {/* TEMPERATURE */}
       <div className="trip-stop-weather-main">
         <strong>
           {Math.round(weather.current.temperature)}
@@ -170,7 +169,6 @@ function DestinationWeather({ city, country, latitude, longitude }) {
         </div>
       </div>
 
-      {/* WEATHER DETAILS */}
       <div className="trip-stop-weather-details">
         <div>
           <Droplets size={15} />
@@ -189,7 +187,6 @@ function DestinationWeather({ city, country, latitude, longitude }) {
         </div>
       </div>
 
-      {/* TRAVEL ADVICE */}
       <div className="trip-weather-advice">
         <div className="trip-weather-advice-heading">
           <span>TRAVEL ADVICE</span>
@@ -215,7 +212,6 @@ function DestinationWeather({ city, country, latitude, longitude }) {
         </div>
       </div>
 
-      {/* PACKING SUGGESTIONS */}
       <div className="trip-packing">
         <div className="trip-packing-heading">
           <span>PACKING SUGGESTIONS</span>
