@@ -24,10 +24,6 @@ import {
 import "../styles/saved.css";
 import "../styles/dashboard.css";
 
-/* =========================================================
-   LOCATION HELPERS
-========================================================= */
-
 function getLocationName(location) {
   return location?.name || location?.city || location?.locationName || "";
 }
@@ -51,21 +47,10 @@ function createLocationPreview(location) {
   };
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
-
 function SavedPage() {
   const navigate = useNavigate();
 
-  /*
-   * Used to invalidate older autocomplete requests.
-   */
   const suggestionRequestRef = useRef(0);
-
-  /* =========================================================
-     SAVED DESTINATIONS STATE
-  ========================================================= */
 
   const [destinations, setDestinations] = useState([]);
 
@@ -74,10 +59,6 @@ function SavedPage() {
   const [limit, setLimit] = useState(1);
 
   const [canSaveMore, setCanSaveMore] = useState(true);
-
-  /* =========================================================
-     SEARCH STATE
-  ========================================================= */
 
   const [city, setCity] = useState("");
 
@@ -88,10 +69,6 @@ function SavedPage() {
   const [locationPreview, setLocationPreview] = useState(null);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
-
-  /* =========================================================
-     UI STATE
-  ========================================================= */
 
   const [loading, setLoading] = useState(true);
 
@@ -104,12 +81,6 @@ function SavedPage() {
   const [error, setError] = useState("");
 
   const [message, setMessage] = useState("");
-
-  /* =========================================================
-     RELOAD DESTINATIONS
-
-     Used after save/delete actions.
-  ========================================================= */
 
   async function loadDestinations() {
     try {
@@ -131,10 +102,6 @@ function SavedPage() {
       setLoading(false);
     }
   }
-
-  /* =========================================================
-     INITIAL LOAD
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -174,25 +141,13 @@ function SavedPage() {
     };
   }, []);
 
-  /* =========================================================
-     AUTOCOMPLETE
-  ========================================================= */
-
   useEffect(() => {
     const query = city.trim();
 
-    /*
-     * The input change handler already clears
-     * stale suggestions when query is too short.
-     */
     if (query.length < 2) {
       return undefined;
     }
 
-    /*
-     * If a location has already been selected,
-     * don't search again for its completed label.
-     */
     if (selectedLocation && city === getLocationLabel(selectedLocation)) {
       return undefined;
     }
@@ -207,9 +162,6 @@ function SavedPage() {
 
         const results = await searchLocations(query);
 
-        /*
-         * Ignore stale requests.
-         */
         if (suggestionRequestRef.current !== requestId) {
           return;
         }
@@ -224,7 +176,7 @@ function SavedPage() {
           return;
         }
 
-        console.error("Location suggestion error:", searchError);
+        if (import.meta.env.DEV) console.error("Location suggestion error:", searchError);
 
         setSuggestions([]);
 
@@ -240,10 +192,6 @@ function SavedPage() {
       clearTimeout(timer);
     };
   }, [city, selectedLocation]);
-
-  /* =========================================================
-     SELECT LOCATION
-  ========================================================= */
 
   function selectLocation(location) {
     const preview = createLocationPreview(location);
@@ -271,10 +219,6 @@ function SavedPage() {
       return;
     }
 
-    /*
-     * Invalidate any autocomplete request
-     * that may still be running.
-     */
     suggestionRequestRef.current += 1;
 
     setSelectedLocation(location);
@@ -297,10 +241,6 @@ function SavedPage() {
   function handleSelectLocation(location) {
     selectLocation(location);
   }
-
-  /* =========================================================
-     EXPLICIT SEARCH
-  ========================================================= */
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -329,10 +269,6 @@ function SavedPage() {
       return;
     }
 
-    /*
-     * Invalidate predictive autocomplete
-     * before explicit search.
-     */
     const requestId = suggestionRequestRef.current + 1;
 
     suggestionRequestRef.current = requestId;
@@ -346,10 +282,6 @@ function SavedPage() {
 
       const results = await searchLocations(cleanQuery);
 
-      /*
-       * User may have changed input
-       * while request was running.
-       */
       if (suggestionRequestRef.current !== requestId) {
         return;
       }
@@ -378,7 +310,7 @@ function SavedPage() {
         return;
       }
 
-      console.error("Saved destination search error:", searchError);
+      if (import.meta.env.DEV) console.error("Saved destination search error:", searchError);
 
       setSelectedLocation(null);
 
@@ -401,14 +333,8 @@ function SavedPage() {
     }
   }
 
-  /* =========================================================
-     INPUT CHANGE
-  ========================================================= */
-
   function handleCityChange(event) {
-    /*
-     * Immediately invalidate any old request.
-     */
+
     suggestionRequestRef.current += 1;
 
     setCity(event.target.value);
@@ -417,9 +343,6 @@ function SavedPage() {
 
     setLocationPreview(null);
 
-    /*
-     * Remove old suggestions immediately.
-     */
     setSuggestions([]);
 
     setShowSuggestions(false);
@@ -430,10 +353,6 @@ function SavedPage() {
 
     setMessage("");
   }
-
-  /* =========================================================
-     SAVE DESTINATION
-  ========================================================= */
 
   async function handleSave() {
     if (!locationPreview) {
@@ -475,10 +394,6 @@ function SavedPage() {
     }
   }
 
-  /* =========================================================
-     DELETE DESTINATION
-  ========================================================= */
-
   async function handleDelete(destination) {
     const confirmed = window.confirm(
       `Remove ${destination.city} from your saved destinations?`,
@@ -507,16 +422,9 @@ function SavedPage() {
     }
   }
 
-  /* =========================================================
-     UI
-  ========================================================= */
-
   return (
     <div className="saved-page">
       <div className="saved-page-container">
-        {/* =========================
-            BACK
-        ========================= */}
 
         <button
           className="saved-back-button"
@@ -526,10 +434,6 @@ function SavedPage() {
           <ArrowLeft size={18} />
           Dashboard
         </button>
-
-        {/* =========================
-            HEADING
-        ========================= */}
 
         <section className="saved-heading">
           <div>
@@ -552,10 +456,6 @@ function SavedPage() {
           </div>
         </section>
 
-        {/* =========================
-            SEARCH CARD
-        ========================= */}
-
         <section className="saved-search-card">
           <div className="saved-search-heading">
             <div className="saved-search-icon">
@@ -571,10 +471,6 @@ function SavedPage() {
               </p>
             </div>
           </div>
-
-          {/* =========================
-              SEARCH FORM
-          ========================= */}
 
           <form className="saved-search-form" onSubmit={handleSearch}>
             <Search size={18} />
@@ -594,10 +490,6 @@ function SavedPage() {
               {searching ? "Searching..." : "Search"}
             </button>
           </form>
-
-          {/* =========================
-              AUTOCOMPLETE
-          ========================= */}
 
           {showSuggestions && suggestions.length > 0 && (
             <div className="saved-suggestions">
@@ -626,10 +518,6 @@ function SavedPage() {
             </div>
           )}
 
-          {/* =========================
-              FREE PLAN LIMIT
-          ========================= */}
-
           {!canSaveMore && plan !== "pro" && (
             <div className="saved-limit-message">
               <Crown size={17} />
@@ -644,10 +532,6 @@ function SavedPage() {
               </div>
             </div>
           )}
-
-          {/* =========================
-              SELECTED LOCATION
-          ========================= */}
 
           {locationPreview && (
             <div className="saved-location-preview">
@@ -681,18 +565,10 @@ function SavedPage() {
             </div>
           )}
 
-          {/* =========================
-              MESSAGES
-          ========================= */}
-
           {message && <div className="saved-success-message">{message}</div>}
 
           {error && <div className="saved-error-message">{error}</div>}
         </section>
-
-        {/* =========================
-            SAVED LIST
-        ========================= */}
 
         <section className="saved-list-section">
           <div className="saved-list-heading">

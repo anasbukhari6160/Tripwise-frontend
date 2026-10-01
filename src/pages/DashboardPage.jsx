@@ -138,17 +138,9 @@ function calculateTripDays(startDate, endDate) {
 function DashboardPage() {
   const navigate = useNavigate();
 
-  /* =========================================================
-     USER
-  ========================================================= */
-
   const [user, setUser] = useState(null);
 
   const [loadingUser, setLoadingUser] = useState(true);
-
-  /* =========================================================
-     WEATHER
-  ========================================================= */
 
   const [weather, setWeather] = useState(null);
 
@@ -168,17 +160,9 @@ function DashboardPage() {
 
   const weatherSearchRequestRef = useRef(0);
 
-  /* =========================================================
-     SAVED DESTINATIONS
-  ========================================================= */
-
   const [savedDestinations, setSavedDestinations] = useState([]);
 
   const [loadingSaved, setLoadingSaved] = useState(true);
-
-  /* =========================================================
-     TRIPS
-  ========================================================= */
 
   const [trips, setTrips] = useState([]);
 
@@ -187,10 +171,6 @@ function DashboardPage() {
   const [nextTripPhotos, setNextTripPhotos] = useState([]);
 
   const [currentTripPhotoIndex, setCurrentTripPhotoIndex] = useState(0);
-
-  /* =========================================================
-     LOAD USER
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -209,7 +189,7 @@ function DashboardPage() {
           return;
         }
 
-        console.error("Unable to load dashboard user:", error);
+        if (import.meta.env.DEV) console.error("Unable to load dashboard user:", error);
       } finally {
         if (!cancelled) {
           setLoadingUser(false);
@@ -223,10 +203,6 @@ function DashboardPage() {
       cancelled = true;
     };
   }, []);
-
-  /* =========================================================
-     LOAD DEFAULT WEATHER
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -245,7 +221,7 @@ function DashboardPage() {
           return;
         }
 
-        console.error("Unable to load weather:", error);
+        if (import.meta.env.DEV) console.error("Unable to load weather:", error);
 
         setWeatherError(error.message || "Weather information is unavailable.");
       } finally {
@@ -261,10 +237,6 @@ function DashboardPage() {
       cancelled = true;
     };
   }, []);
-
-  /* =========================================================
-     LOAD SAVED DESTINATIONS
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -283,7 +255,7 @@ function DashboardPage() {
           return;
         }
 
-        console.error("Unable to load saved destinations:", error);
+        if (import.meta.env.DEV) console.error("Unable to load saved destinations:", error);
 
         setSavedDestinations([]);
       } finally {
@@ -299,10 +271,6 @@ function DashboardPage() {
       cancelled = true;
     };
   }, []);
-
-  /* =========================================================
-     LOAD TRIPS
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -322,7 +290,7 @@ function DashboardPage() {
         }
 
         if (error.status !== 403) {
-          console.error("Unable to load dashboard trips:", error);
+          if (import.meta.env.DEV) console.error("Unable to load dashboard trips:", error);
         }
 
         setTrips([]);
@@ -339,10 +307,6 @@ function DashboardPage() {
       cancelled = true;
     };
   }, []);
-
-  /* =========================================================
-     WEATHER LOCATION SUGGESTIONS
-  ========================================================= */
 
   useEffect(() => {
     const cleanQuery = weatherQuery.trim();
@@ -384,7 +348,7 @@ function DashboardPage() {
           return;
         }
 
-        console.error("Dashboard location search error:", error);
+        if (import.meta.env.DEV) console.error("Dashboard location search error:", error);
 
         setWeatherSuggestions([]);
 
@@ -400,10 +364,6 @@ function DashboardPage() {
       clearTimeout(timer);
     };
   }, [weatherQuery, selectedLocation]);
-
-  /* =========================================================
-     WEATHER SEARCH
-  ========================================================= */
 
   async function handleWeatherSearch(event) {
     event.preventDefault();
@@ -462,7 +422,7 @@ function DashboardPage() {
 
       setWeather(weatherData);
     } catch (error) {
-      console.error("Unable to search weather location:", error);
+      if (import.meta.env.DEV) console.error("Unable to search weather location:", error);
 
       setWeatherError(error.message || "Unable to load weather.");
 
@@ -475,10 +435,6 @@ function DashboardPage() {
       setLoadingWeather(false);
     }
   }
-
-  /* =========================================================
-     SELECT WEATHER LOCATION
-  ========================================================= */
 
   async function handleSelectLocation(location) {
     weatherSearchRequestRef.current += 1;
@@ -500,17 +456,13 @@ function DashboardPage() {
 
       setWeather(weatherData);
     } catch (error) {
-      console.error("Unable to load selected location weather:", error);
+      if (import.meta.env.DEV) console.error("Unable to load selected location weather:", error);
 
       setWeatherError(error.message || "Unable to load weather.");
     } finally {
       setLoadingWeather(false);
     }
   }
-
-  /* =========================================================
-     WEATHER INPUT
-  ========================================================= */
 
   function handleWeatherInputChange(event) {
     weatherSearchRequestRef.current += 1;
@@ -525,10 +477,6 @@ function DashboardPage() {
 
     setWeatherError("");
   }
-
-  /* =========================================================
-     UPCOMING TRIPS
-  ========================================================= */
 
   const todayDateKey = getTodayDateKey();
 
@@ -566,10 +514,6 @@ function DashboardPage() {
 
   const nextTripFirstStop = nextTrip?.stops?.[0] || null;
 
-  /* =========================================================
-     NEXT TRIP PHOTOS
-  ========================================================= */
-
   useEffect(() => {
     let cancelled = false;
 
@@ -602,7 +546,7 @@ function DashboardPage() {
           image.src = photo.landscapeUrl || photo.imageUrl;
         });
       } catch (error) {
-        console.error("Unable to load dashboard trip photos:", error);
+        if (import.meta.env.DEV) console.error("Unable to load dashboard trip photos:", error);
 
         if (!cancelled) {
           setNextTripPhotos([]);
@@ -618,10 +562,6 @@ function DashboardPage() {
       cancelled = true;
     };
   }, [nextTripFirstStop?.city, nextTripFirstStop?.country]);
-
-  /* =========================================================
-     PHOTO ROTATION
-  ========================================================= */
 
   useEffect(() => {
     if (nextTripPhotos.length <= 1) {
@@ -645,17 +585,9 @@ function DashboardPage() {
     ? calculateTripDays(nextTrip.startDate, nextTrip.endDate)
     : 0;
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
   if (loadingUser) {
     return <div className="dashboard-loading">Loading your dashboard...</div>;
   }
-
-  /* =========================================================
-     PAGE
-  ========================================================= */
 
   return (
     <div className="dashboard-layout">
@@ -669,7 +601,6 @@ function DashboardPage() {
         />
 
         <main className="dashboard-content">
-          {/* WELCOME */}
 
           <section className="dashboard-welcome">
             <div>
@@ -691,8 +622,6 @@ function DashboardPage() {
               Plan a New Trip
             </button>
           </section>
-
-          {/* STATS */}
 
           <section className="dashboard-stats">
             <StatCard
@@ -748,10 +677,7 @@ function DashboardPage() {
             />
           </section>
 
-          {/* MAIN GRID */}
-
           <section className="dashboard-grid">
-            {/* UPCOMING TRIP */}
 
             <div className="dashboard-panel upcoming-trip-panel">
               {nextTrip &&
@@ -867,8 +793,6 @@ function DashboardPage() {
                 </div>
               )}
             </div>
-
-            {/* WEATHER */}
 
             <div className="dashboard-panel weather-panel">
               <div className="panel-heading">
@@ -1007,8 +931,6 @@ function DashboardPage() {
             </div>
           </section>
 
-          {/* SECONDARY */}
-
           <section className="dashboard-secondary-grid">
             <SavedDestinations
               destinations={savedDestinations}
@@ -1017,8 +939,6 @@ function DashboardPage() {
 
             <QuickPlanner />
           </section>
-
-          {/* PRO */}
 
           <section id="pro-section" className="dashboard-pro-section">
             <ProFeaturesCard user={user} />

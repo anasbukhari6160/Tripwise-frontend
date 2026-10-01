@@ -15,10 +15,6 @@ import "../styles/profile.css";
 export default function ProfilePage() {
   const navigate = useNavigate();
 
-  /* =========================================================
-     PROFILE STATE
-  ========================================================= */
-
   const [profile, setProfile] = useState(null);
 
   const [name, setName] = useState("");
@@ -30,10 +26,6 @@ export default function ProfilePage() {
   const [profileSuccess, setProfileSuccess] = useState("");
 
   const [profileError, setProfileError] = useState("");
-
-  /* =========================================================
-     PASSWORD STATE
-  ========================================================= */
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -57,15 +49,7 @@ export default function ProfilePage() {
 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  /* =========================================================
-     DELETE STATE
-  ========================================================= */
-
   const [deletingAccount, setDeletingAccount] = useState(false);
-
-  /* =========================================================
-     LOAD PROFILE
-  ========================================================= */
 
   useEffect(() => {
     async function loadProfile() {
@@ -80,7 +64,7 @@ export default function ProfilePage() {
 
         setName(userData.name || "");
       } catch (error) {
-        console.error("Failed to load profile:", error);
+        if (import.meta.env.DEV) console.error("Failed to load profile:", error);
 
         if (error.status === 401) {
           navigate("/login", {
@@ -98,10 +82,6 @@ export default function ProfilePage() {
 
     loadProfile();
   }, [navigate]);
-
-  /* =========================================================
-     UPDATE PROFILE
-  ========================================================= */
 
   async function handleProfileSubmit(event) {
     event.preventDefault();
@@ -139,17 +119,13 @@ export default function ProfilePage() {
 
       setProfileSuccess(data.message || "Profile updated successfully.");
     } catch (error) {
-      console.error("Profile update failed:", error);
+      if (import.meta.env.DEV) console.error("Profile update failed:", error);
 
       setProfileError(error.message || "Unable to update profile.");
     } finally {
       setSavingProfile(false);
     }
   }
-
-  /* =========================================================
-     PASSWORD INPUT
-  ========================================================= */
 
   function handlePasswordInputChange(event) {
     const { name: fieldName, value } = event.target;
@@ -163,10 +139,6 @@ export default function ProfilePage() {
     setPasswordError("");
     setPasswordSuccess("");
   }
-
-  /* =========================================================
-     REQUEST PASSWORD CHANGE
-  ========================================================= */
 
   async function handlePasswordSubmit(event) {
     event.preventDefault();
@@ -217,17 +189,13 @@ export default function ProfilePage() {
         data.message || "Verification code sent to your email.",
       );
     } catch (error) {
-      console.error("Password verification request failed:", error);
+      if (import.meta.env.DEV) console.error("Password verification request failed:", error);
 
       setPasswordError(error.message || "Unable to send verification code.");
     } finally {
       setChangingPassword(false);
     }
   }
-
-  /* =========================================================
-     VERIFY PASSWORD CODE
-  ========================================================= */
 
   async function handlePasswordVerification(event) {
     event.preventDefault();
@@ -272,17 +240,13 @@ export default function ProfilePage() {
 
       setShowConfirmPassword(false);
     } catch (error) {
-      console.error("Password verification failed:", error);
+      if (import.meta.env.DEV) console.error("Password verification failed:", error);
 
       setPasswordError(error.message || "Unable to verify code.");
     } finally {
       setChangingPassword(false);
     }
   }
-
-  /* =========================================================
-     DELETE ACCOUNT
-  ========================================================= */
 
   async function handleDeleteAccount() {
     const confirmed = window.confirm(
@@ -302,7 +266,7 @@ export default function ProfilePage() {
         replace: true,
       });
     } catch (error) {
-      console.error("Delete account failed:", error);
+      if (import.meta.env.DEV) console.error("Delete account failed:", error);
 
       setProfileError(error.message || "Unable to delete account.");
 
@@ -314,10 +278,6 @@ export default function ProfilePage() {
       setDeletingAccount(false);
     }
   }
-
-  /* =========================================================
-     INITIALS
-  ========================================================= */
 
   function getInitials() {
     const profileName = profile?.name?.trim();
@@ -335,10 +295,6 @@ export default function ProfilePage() {
     return `${words[0][0]}${words[1][0]}`.toUpperCase();
   }
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
   if (loading) {
     return <div className="profile-loading">Loading your profile...</div>;
   }
@@ -346,7 +302,6 @@ export default function ProfilePage() {
   return (
     <main className="profile-page">
       <div className="profile-container">
-        {/* BACK */}
 
         <button
           type="button"
@@ -356,8 +311,6 @@ export default function ProfilePage() {
           <span aria-hidden="true">←</span>
           Back
         </button>
-
-        {/* HEADING */}
 
         <header className="profile-heading">
           <span>ACCOUNT SETTINGS</span>
@@ -371,7 +324,6 @@ export default function ProfilePage() {
         </header>
 
         <section className="profile-layout">
-          {/* LEFT SUMMARY */}
 
           <aside className="profile-summary-card">
             <div className="profile-large-avatar">{getInitials()}</div>
@@ -419,10 +371,7 @@ export default function ProfilePage() {
             </div>
           </aside>
 
-          {/* RIGHT */}
-
           <div className="profile-settings">
-            {/* PERSONAL INFO */}
 
             <section className="profile-form-card">
               <div className="profile-section-heading">
@@ -482,8 +431,6 @@ export default function ProfilePage() {
                 </button>
               </form>
             </section>
-
-            {/* CHANGE PASSWORD */}
 
             <section className="profile-form-card">
               <div className="profile-section-heading">
@@ -656,8 +603,6 @@ export default function ProfilePage() {
                 </form>
               )}
             </section>
-
-            {/* DANGER */}
 
             <section className="profile-danger-card">
               <div>

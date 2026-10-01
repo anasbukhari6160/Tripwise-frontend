@@ -1,3 +1,4 @@
+import { logoutUser } from "../../services/auth.service";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -47,22 +48,13 @@ function Sidebar({ user }) {
     try {
       setSigningOut(true);
 
-      const response = await fetch("http://localhost:3000/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to sign out.");
-      }
+      await logoutUser();
 
       navigate("/login", {
         replace: true,
       });
     } catch (error) {
-      console.error("Sign out error:", error);
+      if (import.meta.env.DEV) console.error("Sign out error:", error);
 
       window.alert(error.message || "Unable to sign out.");
     } finally {
@@ -102,7 +94,7 @@ function Sidebar({ user }) {
             <MapPin size={19} />
             <span>Trip Planner</span>
           </NavLink>
-          
+
           <NavLink
             to="/contact"
             className={({ isActive }) =>

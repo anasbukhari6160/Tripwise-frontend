@@ -29,6 +29,7 @@ function RegisterPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading) return;
 
     setError("");
 
@@ -48,6 +49,12 @@ function RegisterPage() {
 
       navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
+      if (error.canResend) {
+        navigate(`/verify-email?email=${encodeURIComponent(error.email || formData.email)}`, {
+          state: { message: error.message, canResend: true },
+        });
+        return;
+      }
       setError(error.message);
     } finally {
       setLoading(false);

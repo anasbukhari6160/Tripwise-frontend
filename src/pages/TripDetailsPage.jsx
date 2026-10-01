@@ -78,10 +78,6 @@ function TripDetailsPage() {
 
   const [deleting, setDeleting] = useState(false);
 
-  /* =========================================================
-     LOAD TRIP
-  ========================================================= */
-
   useEffect(() => {
     let cancelled = false;
 
@@ -135,10 +131,6 @@ function TripDetailsPage() {
     };
   }, [tripId, navigate]);
 
-  /* =========================================================
-     DELETE TRIP
-  ========================================================= */
-
   async function handleDeleteTrip() {
     try {
       setDeleting(true);
@@ -156,10 +148,6 @@ function TripDetailsPage() {
       setDeleting(false);
     }
   }
-
-  /* =========================================================
-     LOADING
-  ========================================================= */
 
   if (loading) {
     return (
@@ -182,10 +170,6 @@ function TripDetailsPage() {
       </div>
     );
   }
-
-  /* =========================================================
-     LOAD ERROR
-  ========================================================= */
 
   if (error && !trip) {
     return (
@@ -219,16 +203,9 @@ function TripDetailsPage() {
 
   const status = getTripStatus(trip);
 
-  /* =========================================================
-     PAGE
-  ========================================================= */
-
   return (
     <div className="trip-details-page">
       <div className="trip-details-container">
-        {/* =====================================================
-            TOP BAR
-        ===================================================== */}
 
         <div className="trip-details-topbar">
           <button
@@ -258,15 +235,7 @@ function TripDetailsPage() {
           </div>
         </div>
 
-        {/* =====================================================
-            PAGE ERROR
-        ===================================================== */}
-
         {error && <div className="trip-page-error">{error}</div>}
-
-        {/* =====================================================
-            HERO
-        ===================================================== */}
 
         <section className="trip-details-hero">
           <div className="trip-details-hero-content">
@@ -313,10 +282,6 @@ function TripDetailsPage() {
             </div>
           </div>
         </section>
-
-        {/* =====================================================
-            ITINERARY
-        ===================================================== */}
 
         <section className="trip-details-section">
           <div className="trip-details-section-heading">
@@ -405,19 +370,11 @@ function TripDetailsPage() {
           </div>
         </section>
 
-        {/* =====================================================
-            TRIP RESILIENCE
-        ===================================================== */}
-
         <TripResiliencePanel
           key={trip.id}
           trip={trip}
           onTripUpdated={setTrip}
         />
-
-        {/* =====================================================
-            JOURNEY MAP
-        ===================================================== */}
 
         <section className="trip-details-section trip-map-section">
           <div className="trip-details-section-heading">
@@ -435,10 +392,6 @@ function TripDetailsPage() {
 
           <TripMap stops={trip.stops || []} />
         </section>
-
-        {/* =====================================================
-            DELETE CONFIRMATION
-        ===================================================== */}
 
         {showDeleteConfirm && (
           <div className="trip-delete-overlay">

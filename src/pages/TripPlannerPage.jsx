@@ -148,10 +148,6 @@ function TripPlannerPage() {
     navigate("/dashboard");
   }
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
   if (loadingTrip) {
     return (
       <div className="trip-planner-page">
@@ -163,10 +159,6 @@ function TripPlannerPage() {
       </div>
     );
   }
-
-  /* =========================================================
-     EDIT ERROR
-  ========================================================= */
 
   if (isEditMode && !editingTrip) {
     return (
@@ -201,10 +193,6 @@ function TripPlannerPage() {
       </div>
     );
   }
-
-  /* =========================================================
-     PAGE
-  ========================================================= */
 
   return (
     <div className="trip-planner-page">

@@ -76,19 +76,11 @@ function getLocationLabel(location) {
 function WeatherPage() {
   const navigate = useNavigate();
 
-  /* =========================================================
-     WEATHER STATE
-  ========================================================= */
-
   const [weather, setWeather] = useState(null);
 
   const [loadingWeather, setLoadingWeather] = useState(true);
 
   const [weatherError, setWeatherError] = useState("");
-
-  /* =========================================================
-     SEARCH STATE
-  ========================================================= */
 
   const [query, setQuery] = useState("");
 
@@ -101,10 +93,6 @@ function WeatherPage() {
   const [selectedLocation, setSelectedLocation] = useState(null);
 
   const locationSearchRequestRef = useRef(0);
-
-  /* =========================================================
-     DEFAULT WEATHER
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +111,7 @@ function WeatherPage() {
           return;
         }
 
-        console.error("Default weather error:", error);
+        if (import.meta.env.DEV) console.error("Default weather error:", error);
 
         setWeatherError(error.message || "Weather information is unavailable.");
       } finally {
@@ -140,20 +128,11 @@ function WeatherPage() {
     };
   }, []);
 
-  /* =========================================================
-     LOCATION SUGGESTIONS
-  ========================================================= */
-
   useEffect(() => {
     const cleanQuery = query.trim();
 
     const requestId = ++locationSearchRequestRef.current;
 
-    /*
-     * No synchronous setState here.
-     * Query-change handlers already clear
-     * old suggestions when required.
-     */
     if (cleanQuery.length < 2) {
       return undefined;
     }
@@ -186,7 +165,7 @@ function WeatherPage() {
           return;
         }
 
-        console.error("Location suggestion error:", error);
+        if (import.meta.env.DEV) console.error("Location suggestion error:", error);
 
         setSuggestions([]);
 
@@ -202,10 +181,6 @@ function WeatherPage() {
       clearTimeout(timer);
     };
   }, [query, selectedLocation]);
-
-  /* =========================================================
-     SEARCH SUBMIT
-  ========================================================= */
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -261,7 +236,7 @@ function WeatherPage() {
 
       setWeather(weatherData);
     } catch (error) {
-      console.error("Location search error:", error);
+      if (import.meta.env.DEV) console.error("Location search error:", error);
 
       setWeatherError(error.message || "Unable to load weather.");
 
@@ -274,10 +249,6 @@ function WeatherPage() {
       setLoadingWeather(false);
     }
   }
-
-  /* =========================================================
-     SELECT LOCATION
-  ========================================================= */
 
   async function handleSelectLocation(location) {
     locationSearchRequestRef.current += 1;
@@ -299,17 +270,13 @@ function WeatherPage() {
 
       setWeather(weatherData);
     } catch (error) {
-      console.error("Selected weather error:", error);
+      if (import.meta.env.DEV) console.error("Selected weather error:", error);
 
       setWeatherError(error.message || "Unable to load weather.");
     } finally {
       setLoadingWeather(false);
     }
   }
-
-  /* =========================================================
-     QUERY CHANGE
-  ========================================================= */
 
   function handleQueryChange(event) {
     locationSearchRequestRef.current += 1;
@@ -325,14 +292,9 @@ function WeatherPage() {
     setWeatherError("");
   }
 
-  /* =========================================================
-     PAGE
-  ========================================================= */
-
   return (
     <div className="weather-page">
       <div className="weather-page-container">
-        {/* BACK */}
 
         <button
           className="weather-back-button"
@@ -342,8 +304,6 @@ function WeatherPage() {
           <ArrowLeft size={18} />
           Dashboard
         </button>
-
-        {/* HEADING */}
 
         <div className="weather-page-heading">
           <span>TRIPWISE WEATHER</span>
@@ -358,7 +318,6 @@ function WeatherPage() {
 
         <div className="weather-page-content">
           <section className="dashboard-panel weather-panel">
-            {/* PANEL HEADING */}
 
             <div className="panel-heading">
               <div>
@@ -367,8 +326,6 @@ function WeatherPage() {
                 <h2>Weather overview</h2>
               </div>
             </div>
-
-            {/* SEARCH */}
 
             <div className="weather-search-wrapper">
               <form className="weather-search" onSubmit={handleSearch}>
@@ -389,8 +346,6 @@ function WeatherPage() {
                   {searchingLocations ? "Searching..." : "Search"}
                 </button>
               </form>
-
-              {/* SUGGESTIONS */}
 
               {showSuggestions && suggestions.length > 0 && (
                 <div className="weather-suggestions">
@@ -424,19 +379,14 @@ function WeatherPage() {
               )}
             </div>
 
-            {/* ERROR */}
-
             {weatherError && (
               <div className="weather-search-error">{weatherError}</div>
             )}
-
-            {/* WEATHER DATA */}
 
             {loadingWeather && !weather ? (
               <div className="weather-state">Loading weather...</div>
             ) : weather ? (
               <>
-                {/* CURRENT */}
 
                 <div className="weather-current">
                   <div>
@@ -453,8 +403,6 @@ function WeatherPage() {
                     {getWeatherIcon(weather.current.condition, 50)}
                   </div>
                 </div>
-
-                {/* DETAILS */}
 
                 <div className="weather-extra-details">
                   <div>
@@ -478,8 +426,6 @@ function WeatherPage() {
                   </div>
                 </div>
 
-                {/* FORECAST */}
-
                 <div className="weather-days">
                   {weather.forecast.map((day) => (
                     <div key={day.date}>
@@ -495,8 +441,6 @@ function WeatherPage() {
                     </div>
                   ))}
                 </div>
-
-                {/* LOCATION NOTE */}
 
                 <p className="weather-location-note">
                   Showing weather for {weather.location.name}

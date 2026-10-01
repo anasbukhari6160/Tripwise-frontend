@@ -75,10 +75,6 @@ function DestinationSearch({
 
   const [error, setError] = useState("");
 
-  /* =========================================================
-     CLOSE ON OUTSIDE CLICK
-  ========================================================= */
-
   useEffect(() => {
     function handleOutsideClick(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -92,10 +88,6 @@ function DestinationSearch({
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
-
-  /* =========================================================
-     AUTOCOMPLETE
-  ========================================================= */
 
   useEffect(() => {
     const cleanQuery = query.trim();
@@ -136,7 +128,7 @@ function DestinationSearch({
           return;
         }
 
-        console.error("Destination search error:", requestError);
+        if (import.meta.env.DEV) console.error("Destination search error:", requestError);
 
         setSuggestions([]);
 
@@ -155,10 +147,6 @@ function DestinationSearch({
     };
   }, [query, selectedLocation, disabled]);
 
-  /* =========================================================
-     INPUT CHANGE
-  ========================================================= */
-
   function handleQueryChange(event) {
     requestRef.current += 1;
 
@@ -174,10 +162,6 @@ function DestinationSearch({
 
     setError("");
   }
-
-  /* =========================================================
-     SELECT DESTINATION
-  ========================================================= */
 
   function handleSelect(location) {
     requestRef.current += 1;

@@ -29,7 +29,6 @@ export function getPackingSuggestions(weather) {
     },
   ];
 
-  // Hot weather
   if (Number.isFinite(temperature) && temperature >= 25) {
     suggestions.push(
       {
@@ -45,7 +44,6 @@ export function getPackingSuggestions(weather) {
     );
   }
 
-  // Very hot
   if (Number.isFinite(temperature) && temperature >= 35) {
     suggestions.push(
       {
@@ -61,7 +59,6 @@ export function getPackingSuggestions(weather) {
     );
   }
 
-  // Cold
   if (Number.isFinite(temperature) && temperature <= 10) {
     suggestions.push({
       id: "warm-jacket",
@@ -70,7 +67,6 @@ export function getPackingSuggestions(weather) {
     });
   }
 
-  // Freezing
   if (Number.isFinite(temperature) && temperature <= 0) {
     suggestions.push(
       {
@@ -91,7 +87,6 @@ export function getPackingSuggestions(weather) {
     );
   }
 
-  // Rain
   if (
     condition.includes("rain") ||
     condition.includes("shower") ||
@@ -116,7 +111,6 @@ export function getPackingSuggestions(weather) {
     );
   }
 
-  // Snow
   if (condition.includes("snow")) {
     suggestions.push({
       id: "snow-boots",
@@ -125,7 +119,6 @@ export function getPackingSuggestions(weather) {
     });
   }
 
-  // Strong wind
   if (Number.isFinite(windSpeed) && windSpeed >= 30) {
     suggestions.push({
       id: "windbreaker",
@@ -134,7 +127,6 @@ export function getPackingSuggestions(weather) {
     });
   }
 
-  // Hot + humid
   if (
     Number.isFinite(humidity) &&
     Number.isFinite(temperature) &&
@@ -148,7 +140,6 @@ export function getPackingSuggestions(weather) {
     });
   }
 
-  // Sunny / clear
   if (
     condition.includes("clear") &&
     Number.isFinite(temperature) &&
@@ -161,6 +152,5 @@ export function getPackingSuggestions(weather) {
     });
   }
 
-  // Remove duplicate items by id.
   return [...new Map(suggestions.map((item) => [item.id, item])).values()];
 }

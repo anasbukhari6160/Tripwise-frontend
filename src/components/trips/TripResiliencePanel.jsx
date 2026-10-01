@@ -155,10 +155,6 @@ function getSeverityIcon(severity) {
   return <CheckCircle2 size={17} />;
 }
 
-/* =========================================================
-   CUSTOM DROPDOWN
-========================================================= */
-
 function TripResilienceSelect({
   value,
   options = [],
@@ -259,10 +255,6 @@ function TripResilienceSelect({
   );
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 function TripResiliencePanel({ trip, onTripUpdated }) {
   const [scenarios, setScenarios] = useState(() => buildInitialScenarios(trip));
 
@@ -280,10 +272,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
 
   const [recoverySuccess, setRecoverySuccess] = useState("");
 
-  /* =========================================================
-     UPDATE SCENARIO
-  ========================================================= */
-
   function updateScenario(localId, field, value) {
     setScenarios((current) =>
       current.map((scenario) =>
@@ -300,10 +288,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
     setError("");
     setRecoverySuccess("");
   }
-
-  /* =========================================================
-     ADD SCENARIO
-  ========================================================= */
 
   function handleAddScenario() {
     if (scenarios.length >= 10) {
@@ -337,10 +321,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
     setRecoverySuccess("");
   }
 
-  /* =========================================================
-     REMOVE SCENARIO
-  ========================================================= */
-
   function handleRemoveScenario(localId) {
     setScenarios((current) =>
       current.filter((scenario) => scenario.localId !== localId),
@@ -350,10 +330,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
     setError("");
     setRecoverySuccess("");
   }
-
-  /* =========================================================
-     VALIDATION
-  ========================================================= */
 
   function validateScenarios() {
     if (scenarios.length === 0) {
@@ -384,10 +360,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
 
     return "";
   }
-
-  /* =========================================================
-     RUN STRESS TEST
-  ========================================================= */
 
   async function handleStressTest() {
     if (!trip?.id || running || applyingRecovery) {
@@ -421,10 +393,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
     }
   }
 
-  /* =========================================================
-     REQUEST RECOVERY
-  ========================================================= */
-
   function requestRecoveryApplication(action) {
     if (!action?.application?.canApply) {
       return;
@@ -436,10 +404,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
     setRecoverySuccess("");
   }
 
-  /* =========================================================
-     CANCEL RECOVERY
-  ========================================================= */
-
   function cancelRecoveryApplication() {
     if (applyingRecovery) {
       return;
@@ -447,10 +411,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
 
     setPendingRecovery(null);
   }
-
-  /* =========================================================
-     CONFIRM RECOVERY
-  ========================================================= */
 
   async function confirmRecoveryApplication() {
     if (!pendingRecovery || applyingRecovery) {
@@ -507,9 +467,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
 
   return (
     <section className="trip-resilience">
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
 
       <div className="trip-resilience__header">
         <div className="trip-resilience__heading">
@@ -554,10 +511,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
         </button>
       </div>
 
-      {/* =====================================================
-          SCENARIO BUILDER
-      ===================================================== */}
-
       <div className="trip-resilience__scenario-builder">
         <div className="trip-resilience__scenario-heading">
           <div>
@@ -593,7 +546,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
               </div>
 
               <div className="trip-resilience__scenario-fields">
-                {/* SCENARIO */}
 
                 <div className="trip-resilience__field">
                   <label>Scenario</label>
@@ -610,8 +562,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
                   />
                 </div>
 
-                {/* DESTINATION */}
-
                 <div className="trip-resilience__field">
                   <label>Destination</label>
 
@@ -626,8 +576,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
                     }
                   />
                 </div>
-
-                {/* HOURS */}
 
                 {scenarioNeedsHours(scenario.type) ? (
                   <div className="trip-resilience__field trip-resilience__field--hours">
@@ -716,10 +664,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
         </div>
       </div>
 
-      {/* =====================================================
-          ERROR
-      ===================================================== */}
-
       {error && (
         <div className="trip-resilience__error" role="alert">
           <AlertTriangle size={18} />
@@ -728,10 +672,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
         </div>
       )}
 
-      {/* =====================================================
-          SUCCESS
-      ===================================================== */}
-
       {recoverySuccess && (
         <div className="trip-resilience__success">
           <CheckCircle2 size={18} />
@@ -739,10 +679,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
           <span>{recoverySuccess}</span>
         </div>
       )}
-
-      {/* =====================================================
-          PREVIEW
-      ===================================================== */}
 
       {!report && !running && (
         <div className="trip-resilience__preview">
@@ -765,10 +701,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
           </div>
         </div>
       )}
-
-      {/* =====================================================
-          RESULTS
-      ===================================================== */}
 
       {report && (
         <>
@@ -822,8 +754,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
             </div>
           </div>
 
-          {/* DETAILS TOGGLE */}
-
           <button
             type="button"
             className="trip-resilience__details-toggle"
@@ -840,9 +770,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
 
           {showDetails && (
             <div className="trip-resilience__details">
-              {/* =================================================
-                  RISKS
-              ================================================= */}
 
               <div className="trip-resilience__block">
                 <div className="trip-resilience__block-heading">
@@ -888,10 +815,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
                   )}
                 </div>
               </div>
-
-              {/* =================================================
-                  RECOVERY
-              ================================================= */}
 
               <div className="trip-resilience__block">
                 <div className="trip-resilience__block-heading">
@@ -982,10 +905,6 @@ function TripResiliencePanel({ trip, onTripUpdated }) {
           )}
         </>
       )}
-
-      {/* =====================================================
-          APPLY CONFIRMATION
-      ===================================================== */}
 
       {pendingRecovery && (
         <div className="trip-resilience__confirm-overlay">

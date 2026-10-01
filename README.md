@@ -1,16 +1,31 @@
-# React + Vite
+# TripWise frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend. Use Node.js 24.
 
-Currently, two official plugins are available:
+## Local verification
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Run npm install (or npm ci), npm run lint, npm test, and npm run build.
+The API tests use Node's experimental VM module support to load the existing Vite service modules with mocked fetch; they do not contact real providers.
 
-## React Compiler
+## Vercel
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Repository root: this client directory/repository.
+- Framework: Vite.
+- Install command: npm ci.
+- Build command: npm run build.
+- Output directory: dist.
+- Node.js: 24.x.
+- VITE_API_URL: required, public HTTPS backend origin; do not append /api. Trailing slashes are normalized.
+- VITE_GOOGLE_CLIENT_ID: required, public Google Web client ID; must match the backend GOOGLE_CLIENT_ID.
 
-## Expanding the ESLint configuration
+Set variables for each intended deployment environment before building. Rebuild when they change. Only public values belong in VITE_ variables. Never put backend secrets in this repository.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Add both variables under Vercel -> Project -> Settings -> Environment Variables and tick them for **both** the Production and Preview environments. A variable added to only one environment leaves the other environment's build failing on the missing-value check, which is the usual cause of a failing PR Preview. Do not add `*.vercel.app` to the backend CORS allowlist to work around a Preview host.
+
+The build rejects missing configuration and HTTP/localhost production API targets. Local development values live in the gitignored `.env.development.local`, which Vite loads only in development mode, so `npm run dev` can use `http://localhost:3000` while `npm run build` still resolves the production origin from `.env` or the process environment.
+
+vercel.json provides the React Router fallback for deep links and refreshes. Preview deployment origins must match the backend FRONTEND_URL configuration; a wildcard credentialed CORS policy is not used.
+
+Verify Google sign-in, verification/resend, password reset, refresh restoration, logout, profile, trip and payment flows in the deployed browser. Browsers that block cross-site cookies can prevent sessions across separate Vercel/Railway domains; verify the intended browser settings and domain configuration.
+
+The audit changed request handling and auth failure/loading behavior while preserving the existing layout, styles, and routes. No deployment was performed.

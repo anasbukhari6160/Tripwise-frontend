@@ -597,30 +597,61 @@
    GOOGLE AUTH
 ===================================================== */
 
-.google-login-wrapper {
-  width: 100%;
-
-  display: flex;
-  justify-content: center;
-}
-
 .google-auth-container {
+  position: relative;
+
   width: 100%;
+  min-width: 0;
 
   display: flex;
   align-items: center;
   justify-content: center;
-
-  overflow: hidden;
 }
 
 .google-auth-container > div {
   width: 100%;
-  max-width: 100%;
+  min-width: 0;
 }
 
+/* Google writes an inline width onto its own iframe, so these must win. */
 .google-auth-container iframe {
+  width: 100% !important;
   max-width: 100% !important;
+}
+
+.google-auth-loading {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  border-radius: 999px;
+
+  background: #131314;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.google-auth-spinner {
+  width: 15px;
+  height: 15px;
+
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+
+  animation: google-auth-spin 0.8s linear infinite;
+}
+
+@keyframes google-auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* =====================================================
@@ -704,14 +735,6 @@
     border-radius: 10px;
 
     font-size: 20px;
-  }
-
-  .google-auth-container {
-    width: 100%;
-  }
-
-  .google-auth-container iframe {
-    max-width: 100% !important;
   }
 }
 

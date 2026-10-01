@@ -51,10 +51,6 @@ function TripsPage() {
   const [error, setError] = useState("");
   const [proLocked, setProLocked] = useState(false);
 
-  /* =========================================================
-     INITIAL LOAD
-  ========================================================= */
-
   useEffect(() => {
     let cancelled = false;
 
@@ -104,10 +100,6 @@ function TripsPage() {
     };
   }, [navigate]);
 
-  /* =========================================================
-     RETRY LOAD
-  ========================================================= */
-
   async function loadTrips() {
     try {
       setLoading(true);
@@ -139,10 +131,6 @@ function TripsPage() {
     }
   }
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
   if (loading) {
     return (
       <div className="trips-page">
@@ -164,10 +152,6 @@ function TripsPage() {
       </div>
     );
   }
-
-  /* =========================================================
-     PRO LOCK
-  ========================================================= */
 
   if (proLocked) {
     return (
@@ -204,10 +188,6 @@ function TripsPage() {
     );
   }
 
-  /* =========================================================
-     PAGE
-  ========================================================= */
-
   return (
     <div className="trips-page">
       <div className="trips-page-container">
@@ -220,8 +200,6 @@ function TripsPage() {
 
           <span>Dashboard</span>
         </button>
-
-        {/* HEADER */}
 
         <div className="trips-page-heading">
           <div>
@@ -241,8 +219,6 @@ function TripsPage() {
           </button>
         </div>
 
-        {/* ERROR */}
-
         {error && (
           <div className="trip-page-error">
             <span>{error}</span>
@@ -252,8 +228,6 @@ function TripsPage() {
             </button>
           </div>
         )}
-
-        {/* EMPTY STATE */}
 
         {!error && trips.length === 0 && (
           <div className="trips-empty-state">
@@ -275,8 +249,6 @@ function TripsPage() {
             </button>
           </div>
         )}
-
-        {/* TRIPS */}
 
         {!error && trips.length > 0 && (
           <div className="trips-list">
