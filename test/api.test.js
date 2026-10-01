@@ -3,17 +3,35 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import vm from "node:vm";
 import { validateApiUrl, validateGoogleClientId } from "../src/config/environment.js";
+import { apiUrl } from "../src/config/api.js";
 
-test("API configuration normalizes URLs and rejects invalid production settings", () => {
-  assert.equal(validateApiUrl(" https://api.example.com/// ", true), "https://api.example.com");
-  for (const value of ["", "http://localhost:3000", "https://localhost", "ftp://example.com", "https://user:password@example.com", "https://example.com?x=1"]) {
-    assert.throws(() => validateApiUrl(value, true));
+test("API requests resolve to same-origin relative paths", () => {
+  for (const path of ["/api/auth/google", "/api/auth/me", "api/auth/login", "///api/trips/42"]) {
+    const resolved = apiUrl(path);
+    assert.ok(resolved.startsWith("/api/"), `expected ${resolved} to stay on the same origin`);
+    assert.ok(!resolved.includes("://"), `expected ${resolved} to contain no absolute origin`);
+    assert.ok(!/^https?:/i.test(resolved), `expected ${resolved} to be protocol-relative`);
+  }
+  assert.equal(apiUrl("/api/auth/me"), "/api/auth/me");
+  assert.throws(() => apiUrl(""));
+  assert.throws(() => apiUrl(null));
+});
+
+test("development proxy target and Google client ID are validated", () => {
+  assert.equal(validateApiUrl(" http://localhost:3000/ "), "http://localhost:3000");
+  for (const value of ["", "ftp://example.com", "https://user:password@example.com", "https://example.com?x=1"]) {
+    assert.throws(() => validateApiUrl(value));
   }
   assert.throws(() => validateGoogleClientId(""));
-  for (const value of ["http://0.0.0.0:3000", "https://api.local", "https://[::1]:3000"]) {
-    assert.throws(() => validateApiUrl(value, true));
-  }
-  assert.equal(validateApiUrl("http://localhost:3000", false), "http://localhost:3000");
+});
+
+test("frontend source never targets the backend origin directly", async () => {
+  const services = await readFile(new URL("../src/services/api.service.js", import.meta.url), "utf8");
+
+  assert.match(services, /credentials:\s*"include"/);
+  assert.doesNotMatch(services, /railway\.app/);
+  assert.doesNotMatch(services, /import\.meta\.env\.VITE_API_URL/);
+  assert.doesNotMatch(services, /no-cors/);
 });
 
 test("API requests preserve credentials, routes, error metadata and bounded failure handling", async () => {
@@ -31,7 +49,7 @@ test("API requests preserve credentials, routes, error metadata and bounded fail
     },
   });
   const config = new vm.SyntheticModule(["apiUrl"], function () {
-    this.setExport("apiUrl", (path) => "https://api.example.com" + path);
+    this.setExport("apiUrl", apiUrl);
   }, { context });
   const helper = new vm.SourceTextModule(await readFile(new URL("../src/services/api.service.js", import.meta.url), "utf8"), { context });
   await helper.link(() => config);
@@ -51,8 +69,9 @@ test("API requests preserve credentials, routes, error metadata and bounded fail
   for (const [name, args, route] of calls) {
     await auth.namespace[name](...args);
     const request = requests.at(-1);
-    assert.equal(request.url, "https://api.example.com/api/auth/" + route);
+    assert.equal(request.url, "/api/auth/" + route);
     assert.equal(request.options.credentials, "include");
+    assert.equal(request.options.mode, undefined);
     assert.equal(request.options.method || "GET", route === "me" ? "GET" : "POST");
   }
   assert.equal(JSON.parse(requests[5].options.body).code, "012345");
@@ -70,14 +89,23 @@ test("API requests preserve credentials, routes, error metadata and bounded fail
   await assert.rejects(apiRequest("/test", { timeout: 10 }), /timed out/);
 });
 
-test("Vercel SPA rewrites serve deep links without shadowing static assets", async () => {
+test("Vercel proxies /api to the backend before the SPA fallback", async () => {
   const vercel = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
-  const rewrites = vercel.rewrites;
+  const [apiRewrite, spaRewrite] = vercel.rewrites;
 
-  assert.ok(Array.isArray(rewrites) && rewrites.length > 0, "expected at least one rewrite");
+  assert.equal(apiRewrite.source, "/api/:path*");
+  assert.match(apiRewrite.destination, /^https:\/\/[^\s/]+\/api\/:path\*$/);
 
-  const [rewrite] = rewrites;
-  const pattern = new RegExp(`^${rewrite.source}$`);
+  for (const route of ["/api/auth/google", "/api/auth/me", "/api/trips", "/api/ai/chat"]) {
+    const resolved = apiRewrite.destination.replace(":path*", route.slice("/api".length));
+    assert.match(resolved, /^https:\/\/[^\s/]+\/api\//, `expected ${route} to proxy to the backend`);
+  }
+
+  // Vercel applies the first matching rewrite, so the API rule must stay first.
+  assert.equal(vercel.rewrites[0].source, "/api/:path*");
+  assert.equal(vercel.rewrites[1].destination, "/index.html");
+
+  const pattern = new RegExp(`^${spaRewrite.source}$`);
 
   for (const route of ["/dashboard", "/login", "/trips/42", "/payment/success", "/weather"]) {
     assert.match(route, pattern, `expected ${route} to fall through to index.html`);
@@ -86,4 +114,11 @@ test("Vercel SPA rewrites serve deep links without shadowing static assets", asy
   for (const asset of ["/assets/index-UQIkfPNI.js", "/assets/index-xuni7rHM.css", "/favicon.svg", "/icons.svg"]) {
     assert.doesNotMatch(asset, pattern, `expected ${asset} to be served as a static file`);
   }
+});
+
+test("Vercel marks proxied API responses as uncacheable", async () => {
+  const vercel = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+  const apiHeader = vercel.headers.find((entry) => entry.source === "/api/:path*");
+
+  assert.equal(apiHeader.headers.find((h) => h.key === "Cache-Control").value, "no-store");
 });

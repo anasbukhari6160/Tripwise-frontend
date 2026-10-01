@@ -1,5 +1,23 @@
 {
   "rewrites": [
-    { "source": "/((?!assets/|favicon\\.svg$|icons\\.svg$|index\\.html$).*)", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://tripwise-backend-production-ee05.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/((?!assets/|favicon\\.svg$|icons\\.svg$|index\\.html$).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
   ]
 }

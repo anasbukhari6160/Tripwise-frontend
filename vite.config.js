@@ -4,8 +4,23 @@ import { validateApiUrl, validateGoogleClientId } from './src/config/environment
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, import.meta.dirname, 'VITE_')
-  validateApiUrl(env.VITE_API_URL, command === 'build')
+  const isDevServer = command === 'serve'
+
   validateGoogleClientId(env.VITE_GOOGLE_CLIENT_ID)
 
-  return { plugins: [react()] }
+  if (!isDevServer) {
+    return { plugins: [react()] }
+  }
+
+  return {
+    plugins: [react()],
+    server: {
+      proxy: {
+        '/api': {
+          target: validateApiUrl(env.VITE_API_URL),
+          changeOrigin: true,
+        },
+      },
+    },
+  }
 })
